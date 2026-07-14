@@ -12,7 +12,8 @@ import {
   Plus,
   Search,
   Star,
-  Trash2
+  Trash2,
+  Download
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import { loadState, saveState } from "./storage";
@@ -23,6 +24,8 @@ export default function App() {
   const [state, setState] = useState<NotebookState>(() => loadState());
   const [search, setSearch] = useState("");
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => saveState(state), [state]);
 
@@ -428,6 +431,39 @@ export default function App() {
     downloadTextFile(`${safeName || "chapitre"}.tex`, tex);
   };
 
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+    setIsInstalled(standalone);
+
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  const installApp = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
+
   const filteredSubjects = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return state.subjects;
@@ -457,13 +493,22 @@ export default function App() {
           </div>
         </div>
 
-        <div className="search">
-          <Search size={18} />
-          <input
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-            placeholder="Rechercher une matière ou un chapitre…"
-          />
+        <div className="topbar-actions">
+          <div className="search">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Rechercher une matière ou un chapitre…"
+            />
+          </div>
+
+          {!isInstalled && installPrompt && (
+            <button className="install-button" onClick={installApp}>
+              <Download size={18} />
+              Installer
+            </button>
+          )}
         </div>
       </header>
 

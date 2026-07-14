@@ -549,3 +549,56 @@ canvas {
     max-height: 66vh;
   }
 }
+
+
+/* v0.3.3 — installation PWA */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 1;
+}
+
+.install-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #60a5fa;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #2563eb;
+  color: white;
+  font-weight: 700;
+}
+
+.install-button:hover {
+  background: #1d4ed8;
+}
+
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior: none;
+  }
+
+  .topbar {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .topbar-actions .search {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .install-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
