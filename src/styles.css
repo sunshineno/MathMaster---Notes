@@ -656,3 +656,242 @@ canvas {
     flex: 1 1 auto;
   }
 }
+
+
+/* v0.4.0 — blocs mathématiques */
+.math-blocks-panel {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #d8dee8;
+  border-radius: 14px;
+  background: white;
+}
+
+.math-blocks-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.math-blocks-header h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.math-blocks-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.block-add-menu {
+  min-width: 330px;
+}
+
+.block-add-menu > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  color: #475569;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.block-add-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.block-add-grid button {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+}
+
+.block-add-grid button:hover {
+  border-color: #60a5fa;
+  background: #dbeafe;
+}
+
+.blocks-empty {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 120px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+}
+
+.blocks-empty button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #2563eb;
+  color: white;
+}
+
+.blocks-list {
+  display: grid;
+  gap: 12px;
+}
+
+.math-block {
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-left-width: 5px;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.math-block-definition { border-left-color: #2563eb; }
+.math-block-theoreme { border-left-color: #dc2626; }
+.math-block-proposition { border-left-color: #7c3aed; }
+.math-block-lemme { border-left-color: #9333ea; }
+.math-block-corollaire { border-left-color: #c026d3; }
+.math-block-remarque { border-left-color: #64748b; }
+.math-block-exemple { border-left-color: #d97706; }
+.math-block-proof { border-left-color: #16a34a; }
+.math-block-exercice { border-left-color: #0891b2; }
+.math-block-correction { border-left-color: #0f766e; }
+.math-block-equation { border-left-color: #0f172a; }
+.math-block-text { border-left-color: #94a3b8; }
+
+.math-block-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.math-block-header button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  padding: 5px;
+  background: transparent;
+  color: #475569;
+}
+
+.math-block-header button:hover {
+  background: #e2e8f0;
+}
+
+.math-block-header button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.math-block-header button.danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.math-block-header select {
+  max-width: 145px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 6px 7px;
+  background: white;
+}
+
+.block-title-input {
+  min-width: 120px;
+  flex: 1;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: transparent;
+  font-weight: 700;
+}
+
+.block-title-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  background: white;
+}
+
+.block-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.math-block textarea {
+  display: block;
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  border: 0;
+  padding: 13px;
+  outline: none;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  line-height: 1.55;
+}
+
+.latex-advanced-panel {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: white;
+}
+
+.latex-advanced-panel summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #334155;
+}
+
+.latex-advanced-panel p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.latex-advanced-panel textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 10px;
+  font-family: ui-monospace, monospace;
+}
+
+@media (max-width: 900px) {
+  .math-blocks-header {
+    flex-direction: column;
+  }
+
+  .block-add-menu {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .math-block-header {
+    flex-wrap: wrap;
+  }
+
+  .block-title-input {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .block-actions {
+    margin-left: auto;
+  }
+}

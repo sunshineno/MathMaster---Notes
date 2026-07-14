@@ -18,13 +18,14 @@ import {
   ShieldCheck
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
+import MathBlocksEditor from "./components/MathBlocksEditor";
 import {
   downloadBackup,
   loadState,
   parseBackup,
   saveState
 } from "./storage";
-import type { NotebookState, PaperType } from "./types";
+import type { MathBlock, NotebookState, PaperType } from "./types";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 
 export default function App() {
@@ -188,7 +189,8 @@ export default function App() {
                       title: "Page 1",
                       dataUrl: "",
                       paper: "grid",
-                      latex: ""
+                      latex: "",
+                      blocks: []
                     }
                   ]
                 }
@@ -285,7 +287,8 @@ export default function App() {
                           title: `Page ${currentChapter.pages.length + 1}`,
                           dataUrl: "",
                           paper: "grid",
-                          latex: ""
+                          latex: "",
+                          blocks: []
                         }
                       ]
                     }
@@ -391,6 +394,11 @@ export default function App() {
           : currentSubject
       )
     }));
+  };
+
+
+  const updatePageBlocks = (blocks: MathBlock[]) => {
+    updatePage({ blocks });
   };
 
   const toggleFavorite = () => {
@@ -802,42 +810,17 @@ export default function App() {
                 onSave={dataUrl => updatePage({ dataUrl })}
               />
 
-              <section className="latex-panel">
-                <div>
-                  <h2>LaTeX</h2>
-                  <p>Le contenu utilise automatiquement ton préambule MathMaster.</p>
+              <MathBlocksEditor
+                blocks={page.blocks ?? []}
+                onChange={updatePageBlocks}
+              />
 
-                  <div className="latex-buttons">
-                    <button onClick={() => insertLatexBlock("definition")}>
-                      Définition
-                    </button>
-                    <button onClick={() => insertLatexBlock("theoreme")}>
-                      Théorème
-                    </button>
-                    <button onClick={() => insertLatexBlock("proposition")}>
-                      Proposition
-                    </button>
-                    <button onClick={() => insertLatexBlock("lemme")}>
-                      Lemme
-                    </button>
-                    <button onClick={() => insertLatexBlock("proof")}>
-                      Démonstration
-                    </button>
-                    <button onClick={() => insertLatexBlock("exercice")}>
-                      Exercice
-                    </button>
-                    <button onClick={() => insertLatexBlock("correction")}>
-                      Correction
-                    </button>
-                    <button onClick={() => insertLatexBlock("equation")}>
-                      Équation
-                    </button>
-                    <button onClick={() => insertLatexBlock("align")}>
-                      Align
-                    </button>
-                  </div>
-                </div>
-
+              <details className="latex-advanced-panel">
+                <summary>Mode LaTeX libre avancé</summary>
+                <p>
+                  Utilisé seulement lorsque la page ne contient aucun bloc
+                  mathématique.
+                </p>
                 <textarea
                   value={page.latex}
                   onChange={event => updatePage({ latex: event.target.value })}
@@ -845,7 +828,7 @@ export default function App() {
                     "Exemple :\n\\begin{theoreme}\nTout groupe d'ordre premier est cyclique.\n\\end{theoreme}"
                   }
                 />
-              </section>
+              </details>
             </>
           ) : (
             <div className="empty-state">

@@ -110,11 +110,11 @@ export function escapeLatexTitle(value: string) {
 export function buildLatexDocument(
   subjectTitle: string,
   chapterTitle: string,
-  pages: { title: string; latex: string }[]
+  pages: { title: string; latex: string; blocks?: MathBlock[] }[]
 ) {
   const body = pages
     .map((page) => {
-      const content = page.latex.trim() || "% Aucun contenu LaTeX pour cette page.";
+      const content = pageContentToLatex(page);
       return String.raw`\section{${escapeLatexTitle(page.title)}}
 
 ${content}
@@ -147,4 +147,55 @@ export function downloadTextFile(filename: string, content: string) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+
+import type { MathBlock, MathBlockType } from "./types";
+
+const blockEnvironment: Partial<Record<MathBlockType, string>> = {
+  definition: "definition",
+  theoreme: "theoreme",
+  proposition: "proposition",
+  lemme: "lemme",
+  corollaire: "corollaire",
+  remarque: "remarque",
+  exemple: "exemple"
+};
+
+export function mathBlockToLatex(block: MathBlock): string {
+  const content = block.content.trim() || "% Bloc vide";
+
+  if (block.type === "text" || block.type === "equation") {
+    return content;
+  }
+
+  if (block.type === "proof") {
+    return `\\begin{proof}\n${content}\n\\end{proof}`;
+  }
+
+  if (block.type === "exercice") {
+    return `\\begin{exercice}\n${content}\n\\end{exercice}`;
+  }
+
+  if (block.type === "correction") {
+    return `\\correction\n${content}`;
+  }
+
+  const environment = blockEnvironment[block.type];
+  if (environment) {
+    return `\\begin{${environment}}\n${content}\n\\end{${environment}}`;
+  }
+
+  return content;
+}
+
+export function pageContentToLatex(page: {
+  latex: string;
+  blocks?: MathBlock[];
+}): string {
+  if (page.blocks && page.blocks.length > 0) {
+    return page.blocks.map(mathBlockToLatex).join("\n\n");
+  }
+
+  return page.latex.trim() || "% Aucun contenu LaTeX pour cette page.";
 }
