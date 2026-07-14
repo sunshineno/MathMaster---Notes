@@ -1,68 +1,15 @@
 <!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <meta name="theme-color" content="#172554" />
-  <title>MathMaster Notes</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header>
-    <div>
-      <h1>MathMaster Notes</h1>
-      <p>Notes manuscrites pour les mathématiques</p>
-    </div>
-    <button id="installBtn" class="secondary" hidden>Installer</button>
-  </header>
-
-  <main>
-    <aside>
-      <section>
-        <h2>Matières</h2>
-        <div class="row">
-          <input id="subjectName" placeholder="Nouvelle matière" />
-          <button id="addSubject">+</button>
-        </div>
-        <div id="subjects"></div>
-      </section>
-
-      <section>
-        <h2>Chapitres</h2>
-        <div class="row">
-          <input id="chapterName" placeholder="Nouveau chapitre" />
-          <button id="addChapter">+</button>
-        </div>
-        <div id="chapters"></div>
-      </section>
-    </aside>
-
-    <section class="workspace">
-      <div class="toolbar">
-        <button id="penBtn" class="active">Stylo</button>
-        <button id="eraserBtn">Gomme</button>
-        <label>Épaisseur <input id="size" type="range" min="1" max="30" value="4" /></label>
-        <input id="color" type="color" value="#111827" aria-label="Couleur" />
-        <button id="undoBtn">Annuler</button>
-        <button id="clearBtn">Effacer la page</button>
-        <button id="saveBtn">Enregistrer</button>
-        <button id="exportBtn">Exporter en PNG</button>
-        <button id="printBtn">Créer un PDF</button>
-      </div>
-
-      <div class="page-wrap">
-        <canvas id="canvas"></canvas>
-      </div>
-
-      <section class="latex">
-        <h2>LaTeX</h2>
-        <p>La conversion automatique de l’écriture manuscrite sera ajoutée dans une prochaine étape.</p>
-        <textarea id="latexText" placeholder="Le code LaTeX apparaîtra ici. Tu peux déjà l’écrire ou le corriger manuellement."></textarea>
-      </section>
-    </section>
-  </main>
-
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="description" content="Cahier numérique manuscrit pour étudiants en mathématiques" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>MathMaster Notes</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
