@@ -1,0 +1,10 @@
+{
+  "name": "MathMaster Notes",
+  "short_name": "MathMaster",
+  "description": "Cahier numérique manuscrit pour les mathématiques",
+  "start_url": "/MathMaster---Notes/",
+  "scope": "/MathMaster---Notes/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#111827"
+}
