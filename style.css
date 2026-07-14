@@ -1,0 +1,31 @@
+* { box-sizing: border-box; }
+:root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #eef2ff; }
+body { margin: 0; min-height: 100vh; }
+header { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:#172554; color:white; }
+header h1 { margin:0; font-size:1.35rem; } header p { margin:3px 0 0; opacity:.8; font-size:.85rem; }
+main { display:grid; grid-template-columns:280px 1fr; min-height:calc(100vh - 72px); }
+aside { padding:14px; background:white; border-right:1px solid #dbe2ef; }
+aside section { margin-bottom:24px; }
+h2 { font-size:1rem; margin:0 0 10px; }
+.row { display:flex; gap:6px; }
+input, textarea, button { font:inherit; }
+input[type=text], input:not([type]) { width:100%; }
+input, textarea { border:1px solid #cbd5e1; border-radius:8px; padding:9px; }
+button { border:0; border-radius:8px; padding:9px 12px; background:#2563eb; color:white; cursor:pointer; }
+button.secondary, .toolbar button { background:#e2e8f0; color:#172033; }
+button.active { background:#2563eb; color:white; }
+.item { padding:9px; margin-top:6px; border-radius:8px; background:#f1f5f9; cursor:pointer; display:flex; justify-content:space-between; }
+.item.selected { background:#dbeafe; font-weight:700; }
+.workspace { min-width:0; padding:12px; }
+.toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
+.toolbar label { display:flex; align-items:center; gap:6px; font-size:.85rem; }
+.page-wrap { overflow:auto; background:#cbd5e1; padding:12px; border-radius:12px; touch-action:none; }
+canvas { display:block; background:white; width:100%; max-width:1100px; height:720px; margin:auto; box-shadow:0 4px 18px #64748b55; touch-action:none; }
+.latex { margin-top:12px; background:white; padding:12px; border-radius:12px; }
+.latex p { color:#64748b; font-size:.9rem; }
+textarea { width:100%; min-height:150px; font-family:monospace; }
+@media (max-width:800px) {
+  main { grid-template-columns:1fr; }
+  aside { border-right:0; border-bottom:1px solid #dbe2ef; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  canvas { height:620px; }
+}
