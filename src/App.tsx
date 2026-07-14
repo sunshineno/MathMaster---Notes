@@ -13,10 +13,17 @@ import {
   Search,
   Star,
   Trash2,
-  Download
+  Download,
+  Upload,
+  ShieldCheck
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
-import { loadState, saveState } from "./storage";
+import {
+  downloadBackup,
+  loadState,
+  parseBackup,
+  saveState
+} from "./storage";
 import type { NotebookState, PaperType } from "./types";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 
@@ -26,8 +33,17 @@ export default function App() {
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
 
-  useEffect(() => saveState(state), [state]);
+  useEffect(() => {
+    setSaveStatus("saving");
+    const timer = window.setTimeout(() => {
+      saveState(state);
+      setSaveStatus("saved");
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [state]);
 
   useEffect(() => {
     if (!state.selectedSubjectId && state.subjects[0]) {
@@ -464,6 +480,39 @@ export default function App() {
     setInstallPrompt(null);
   };
 
+
+  const exportNotebookBackup = () => {
+    downloadBackup(state);
+  };
+
+  const restoreNotebookBackup = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const restoredState = parseBackup(content);
+      const confirmed = confirm(
+        "Restaurer cette sauvegarde ?\n\nLes données actuellement présentes dans l'application seront remplacées."
+      );
+
+      if (!confirmed) return;
+
+      setState(restoredState);
+      saveState(restoredState);
+      alert("La sauvegarde a été restaurée avec succès.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Impossible de restaurer cette sauvegarde.";
+      alert(message);
+    }
+  };
+
   const filteredSubjects = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return state.subjects;
@@ -494,6 +543,11 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
+          <div className="save-indicator" title="État de la sauvegarde locale">
+            <ShieldCheck size={17} />
+            {saveStatus === "saving" ? "Sauvegarde…" : "Enregistré"}
+          </div>
+
           <div className="search">
             <Search size={18} />
             <input
@@ -502,6 +556,28 @@ export default function App() {
               placeholder="Rechercher une matière ou un chapitre…"
             />
           </div>
+
+          <button
+            className="backup-button"
+            onClick={exportNotebookBackup}
+            title="Télécharger une sauvegarde complète"
+          >
+            <Download size={18} />
+            Sauvegarder
+          </button>
+
+          <label
+            className="backup-button restore-button"
+            title="Restaurer une sauvegarde complète"
+          >
+            <Upload size={18} />
+            Restaurer
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={restoreNotebookBackup}
+            />
+          </label>
 
           {!isInstalled && installPrompt && (
             <button className="install-button" onClick={installApp}>

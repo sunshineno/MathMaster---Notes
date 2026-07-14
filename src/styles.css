@@ -602,3 +602,57 @@ canvas {
     justify-content: center;
   }
 }
+
+
+/* v0.3.4 — sauvegarde automatique et restauration */
+.save-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.backup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: #1f2937;
+  color: white;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.backup-button:hover {
+  background: #334155;
+}
+
+.restore-button {
+  cursor: pointer;
+}
+
+.restore-button input {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .save-indicator {
+    display: none;
+  }
+
+  .backup-button {
+    padding-inline: 9px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 700px) {
+  .backup-button {
+    flex: 1 1 auto;
+  }
+}

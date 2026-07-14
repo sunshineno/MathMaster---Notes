@@ -1,0 +1,19 @@
+MATHMASTER NOTES — v0.3.4
+
+Remplace uniquement :
+- src/App.tsx
+- src/storage.ts
+- src/styles.css
+- src/components/CanvasBoard.tsx
+- package.json
+
+Nouveautés :
+- sauvegarde automatique après chaque trait ;
+- sauvegarde automatique après annulation, rétablissement et effacement ;
+- indicateur Enregistré / Sauvegarde… ;
+- export complet du cahier en fichier JSON ;
+- restauration complète depuis une sauvegarde JSON ;
+- validation du fichier avant restauration.
+
+Commit conseillé :
+Ajout des sauvegardes automatiques v0.3.4

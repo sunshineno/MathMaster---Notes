@@ -47,6 +47,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   const shapeStart = useRef<Point | null>(null);
   const shapeSnapshot = useRef<string | null>(null);
   const panStart = useRef({ x: 0, y: 0, left: 0, top: 0 });
+  const autosaveTimer = useRef<number | null>(null);
 
   const [tool, setTool] = useState<Tool>("pen");
   const [width, setWidth] = useState(4);
@@ -325,10 +326,29 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     last.current = currentPoint;
   };
 
+  const scheduleAutosave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (autosaveTimer.current !== null) {
+      window.clearTimeout(autosaveTimer.current);
+    }
+
+    autosaveTimer.current = window.setTimeout(() => {
+      onSave(canvas.toDataURL("image/png"));
+      autosaveTimer.current = null;
+    }, 700);
+  };
+
   const pointerUp = () => {
+    const shouldSave = drawing.current && tool !== "pan";
     drawing.current = false;
     shapeStart.current = null;
     shapeSnapshot.current = null;
+
+    if (shouldSave) {
+      scheduleAutosave();
+    }
   };
 
   const undo = () => {
@@ -339,6 +359,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     setFuture(items => [...items, canvas.toDataURL()]);
     setHistory(items => items.slice(0, -1));
     restoreFromUrl(previous);
+    window.setTimeout(scheduleAutosave, 50);
   };
 
   const redo = () => {
@@ -349,6 +370,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     setHistory(items => [...items, canvas.toDataURL()]);
     setFuture(items => items.slice(0, -1));
     restoreFromUrl(next);
+    window.setTimeout(scheduleAutosave, 50);
   };
 
   const clear = () => {
@@ -360,6 +382,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     if (!ctx) return;
 
     drawPaper(ctx, canvas.width, canvas.height);
+    scheduleAutosave();
   };
 
   const save = () => {
@@ -499,8 +522,8 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
       </div>
 
       <p className="canvas-help">
-        Astuce : maintiens <strong>Ctrl</strong> et utilise la molette pour zoomer.
-        Active « Déplacer » pour faire glisser la feuille.
+        Sauvegarde automatique activée. Maintiens <strong>Ctrl</strong> et utilise
+        la molette pour zoomer. Active « Déplacer » pour faire glisser la feuille.
       </p>
 
       <div className="canvas-wrap" ref={wrapRef} onWheel={handleWheel}>
