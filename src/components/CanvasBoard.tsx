@@ -28,6 +28,8 @@ interface Props {
   onSave: (dataUrl: string) => void;
 }
 
+type InputMode = "stylus" | "hybrid" | "read";
+
 type Tool =
   | "pen"
   | "highlighter"
@@ -81,6 +83,8 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   const selectionMoveStart = useRef<Point | null>(null);
   const selectionOrigin = useRef<SelectionRect | null>(null);
   const clipboardRef = useRef<HTMLCanvasElement | null>(null);
+  const ignoredPointers = useRef<Set<number>>(new Set());
+  const penActiveUntil = useRef(0);
 
   const [tool, setTool] = useState<Tool>("pen");
   const [width, setWidth] = useState(4);
@@ -90,6 +94,8 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   const [future, setFuture] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionRect | null>(null);
   const [selectionOffset, setSelectionOffset] = useState({ x: 0, y: 0 });
+  const [inputMode, setInputMode] = useState<InputMode>("stylus");
+  const [palmRejection, setPalmRejection] = useState(true);
 
   const drawPaper = (
     ctx: CanvasRenderingContext2D,
@@ -342,8 +348,37 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     point.y >= rect.y &&
     point.y <= rect.y + rect.height;
 
+
+  const isPalmContact = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType !== "touch") return false;
+
+    const contactSize = Math.max(event.width || 0, event.height || 0);
+    const penWasRecentlyActive = Date.now() < penActiveUntil.current;
+
+    return palmRejection && (contactSize >= 32 || penWasRecentlyActive);
+  };
+
+  const canDrawWithPointer = (
+    event: React.PointerEvent<HTMLCanvasElement>
+  ) => {
+    if (inputMode === "read") return false;
+    if (event.pointerType === "pen") return true;
+    if (event.pointerType === "mouse") return true;
+    return inputMode === "hybrid";
+  };
+
   const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
+
+    if (event.pointerType === "pen") {
+      penActiveUntil.current = Date.now() + 1600;
+    }
+
+    if (event.pointerType === "touch" && isPalmContact(event)) {
+      ignoredPointers.current.add(event.pointerId);
+      return;
+    }
+
     canvas.setPointerCapture(event.pointerId);
 
     if (event.pointerType === "touch") {
@@ -351,8 +386,14 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
         clientX: event.clientX,
         clientY: event.clientY
       });
+
       if (activeTouches.current.size === 2) {
         beginPinch();
+        return;
+      }
+
+      if (inputMode === "stylus") {
+        drawing.current = false;
         return;
       }
     }
@@ -363,7 +404,12 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     drawing.current = true;
     last.current = currentPoint;
 
-    if (tool === "pan" || (event.pointerType === "touch" && tool !== "select")) {
+    const navigationOnly =
+      inputMode === "read" ||
+      tool === "pan" ||
+      (event.pointerType === "touch" && inputMode !== "hybrid");
+
+    if (navigationOnly) {
       const wrap = wrapRef.current;
       if (!wrap) return;
       panStart.current = {
@@ -375,6 +421,11 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
       return;
     }
 
+    if (!canDrawWithPointer(event) && tool !== "select") {
+      drawing.current = false;
+      return;
+    }
+
     if (tool === "select") {
       if (selection && isInsideSelection(currentPoint, selection)) {
         selectionMoveStart.current = currentPoint;
@@ -382,16 +433,23 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
         setSelectionOffset({ x: 0, y: 0 });
       } else {
         selectionStart.current = currentPoint;
-        setSelection({ x: currentPoint.x, y: currentPoint.y, width: 0, height: 0 });
+        setSelection({
+          x: currentPoint.x,
+          y: currentPoint.y,
+          width: 0,
+          height: 0
+        });
       }
       return;
     }
 
     rememberCurrentState();
+
     if (tool === "line" || tool === "rectangle" || tool === "ellipse") {
       shapeStart.current = currentPoint;
       const ctx = canvas.getContext("2d");
-      shapeSnapshot.current = ctx?.getImageData(0, 0, canvas.width, canvas.height) ?? null;
+      shapeSnapshot.current =
+        ctx?.getImageData(0, 0, canvas.width, canvas.height) ?? null;
     }
   };
 
@@ -432,6 +490,12 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   };
 
   const pointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (ignoredPointers.current.has(event.pointerId)) return;
+
+    if (event.pointerType === "pen") {
+      penActiveUntil.current = Date.now() + 1600;
+    }
+
     if (event.pointerType === "touch" && activeTouches.current.has(event.pointerId)) {
       activeTouches.current.set(event.pointerId, {
         clientX: event.clientX,
@@ -445,7 +509,11 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
 
     if (!drawing.current || activeTouches.current.size >= 2) return;
 
-    if (tool === "pan" || (event.pointerType === "touch" && tool !== "select")) {
+    if (
+      inputMode === "read" ||
+      tool === "pan" ||
+      (event.pointerType === "touch" && inputMode !== "hybrid")
+    ) {
       const wrap = wrapRef.current;
       if (!wrap) return;
       wrap.scrollLeft = panStart.current.left - (event.clientX - panStart.current.x);
@@ -531,6 +599,11 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   };
 
   const pointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (ignoredPointers.current.has(event.pointerId)) {
+      ignoredPointers.current.delete(event.pointerId);
+      return;
+    }
+
     if (event.pointerType === "touch") {
       activeTouches.current.delete(event.pointerId);
       if (activeTouches.current.size < 2) pinchStart.current.distance = 0;
@@ -672,6 +745,37 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
 
   return (
     <div className="canvas-section">
+      <div className="input-mode-bar">
+        <label>
+          Mode d’entrée
+          <select
+            value={inputMode}
+            onChange={event => setInputMode(event.target.value as InputMode)}
+          >
+            <option value="stylus">Stylet uniquement</option>
+            <option value="hybrid">Stylet + doigt</option>
+            <option value="read">Lecture / déplacement</option>
+          </select>
+        </label>
+
+        <label className="palm-toggle">
+          <input
+            type="checkbox"
+            checked={palmRejection}
+            onChange={event => setPalmRejection(event.target.checked)}
+          />
+          Rejet de paume
+        </label>
+
+        <span className="input-mode-hint">
+          {inputMode === "stylus"
+            ? "Le doigt ne dessine pas ; deux doigts servent au zoom."
+            : inputMode === "hybrid"
+              ? "Le stylet et le doigt peuvent dessiner."
+              : "L’écriture est désactivée."}
+        </span>
+      </div>
+
       <div className="toolbar">
         <div className="tool-group">
           <button className={tool === "pen" ? "active" : ""} onClick={() => setTool("pen")}>

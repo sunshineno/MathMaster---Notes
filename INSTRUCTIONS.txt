@@ -1,20 +1,18 @@
-MATHMASTER NOTES — v0.5.0 PRISE DE NOTES AVANCÉE
+MATHMASTER NOTES — v0.5.1 REJET DE PAUME
 
-Remplace uniquement :
+Remplace :
 - src/components/CanvasBoard.tsx
 - src/styles.css
 - package.json
 
 Nouveautés :
-- page longue de 2400 px ;
-- zoom tactile à deux doigts ;
-- déplacement tactile naturel ;
-- sélection rectangulaire ;
-- déplacement d'une sélection ;
-- copier, couper, coller et supprimer une zone ;
-- historique adapté aux grandes pages ;
-- stylet et formes conservés ;
-- sauvegarde automatique conservée.
+- rejet de paume activé par défaut ;
+- mode Stylet uniquement ;
+- mode Stylet + doigt ;
+- mode Lecture / déplacement ;
+- détection des contacts tactiles larges ;
+- blocage temporaire des contacts tactiles quand le stylet est actif ;
+- zoom à deux doigts conservé.
 
 Commit conseillé :
-Ajout de la prise de notes avancée v0.5.0
+Ajout du rejet de paume v0.5.1
