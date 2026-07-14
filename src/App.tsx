@@ -1,5 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, FilePlus2, FolderPlus, Search, Star, Plus, FileCode2 } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileCode2,
+  FilePlus2,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  Pencil,
+  Plus,
+  Search,
+  Star,
+  Trash2
+} from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import { loadState, saveState } from "./storage";
 import type { NotebookState, PaperType } from "./types";
@@ -8,102 +22,381 @@ import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 export default function App() {
   const [state, setState] = useState<NotebookState>(() => loadState());
   const [search, setSearch] = useState("");
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
 
   useEffect(() => saveState(state), [state]);
 
   useEffect(() => {
     if (!state.selectedSubjectId && state.subjects[0]) {
-      const subject = state.subjects[0];
-      const chapter = subject.chapters[0];
-      const page = chapter?.pages[0];
-      setState(s => ({
-        ...s,
-        selectedSubjectId: subject.id,
-        selectedChapterId: chapter?.id ?? null,
-        selectedPageId: page?.id ?? null
+      const firstSubject = state.subjects[0];
+      const firstChapter = firstSubject.chapters[0];
+      const firstPage = firstChapter?.pages[0];
+
+      setState(current => ({
+        ...current,
+        selectedSubjectId: firstSubject.id,
+        selectedChapterId: firstChapter?.id ?? null,
+        selectedPageId: firstPage?.id ?? null
       }));
+      setExpandedSubjects({ [firstSubject.id]: true });
     }
   }, []);
 
-  const subject = state.subjects.find(s => s.id === state.selectedSubjectId);
-  const chapter = subject?.chapters.find(c => c.id === state.selectedChapterId);
-  const page = chapter?.pages.find(p => p.id === state.selectedPageId);
+  const subject = state.subjects.find(item => item.id === state.selectedSubjectId);
+  const chapter = subject?.chapters.find(item => item.id === state.selectedChapterId);
+  const page = chapter?.pages.find(item => item.id === state.selectedPageId);
 
-  const update = (recipe: (draft: NotebookState) => NotebookState) => setState(recipe);
+  const update = (recipe: (current: NotebookState) => NotebookState) => {
+    setState(recipe);
+  };
+
+  const selectSubject = (subjectId: string) => {
+    const selected = state.subjects.find(item => item.id === subjectId);
+    const firstChapter = selected?.chapters[0];
+    const firstPage = firstChapter?.pages[0];
+
+    setExpandedSubjects(current => ({ ...current, [subjectId]: true }));
+    setState(current => ({
+      ...current,
+      selectedSubjectId: subjectId,
+      selectedChapterId: firstChapter?.id ?? null,
+      selectedPageId: firstPage?.id ?? null
+    }));
+  };
+
+  const selectChapter = (subjectId: string, chapterId: string) => {
+    const selectedSubject = state.subjects.find(item => item.id === subjectId);
+    const selectedChapter = selectedSubject?.chapters.find(item => item.id === chapterId);
+
+    setState(current => ({
+      ...current,
+      selectedSubjectId: subjectId,
+      selectedChapterId: chapterId,
+      selectedPageId: selectedChapter?.pages[0]?.id ?? null
+    }));
+  };
 
   const addSubject = () => {
     const title = prompt("Nom de la matière :")?.trim();
     if (!title) return;
+
     const id = crypto.randomUUID();
-    update(s => ({ ...s, subjects: [...s.subjects, { id, title, chapters: [] }], selectedSubjectId: id, selectedChapterId: null, selectedPageId: null }));
+    update(current => ({
+      ...current,
+      subjects: [...current.subjects, { id, title, chapters: [] }],
+      selectedSubjectId: id,
+      selectedChapterId: null,
+      selectedPageId: null
+    }));
+    setExpandedSubjects(current => ({ ...current, [id]: true }));
   };
 
-  const addChapter = () => {
-    if (!subject) return;
+  const renameSubject = (subjectId: string) => {
+    const selected = state.subjects.find(item => item.id === subjectId);
+    if (!selected) return;
+
+    const title = prompt("Nouveau nom de la matière :", selected.title)?.trim();
+    if (!title || title === selected.title) return;
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(item =>
+        item.id === subjectId ? { ...item, title } : item
+      )
+    }));
+  };
+
+  const deleteSubject = (subjectId: string) => {
+    const selected = state.subjects.find(item => item.id === subjectId);
+    if (!selected) return;
+
+    const confirmed = confirm(
+      `Supprimer la matière « ${selected.title} » et tous ses chapitres ?\n\nCette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    update(current => {
+      const subjects = current.subjects.filter(item => item.id !== subjectId);
+      const nextSubject = subjects[0];
+      const nextChapter = nextSubject?.chapters[0];
+
+      return {
+        ...current,
+        subjects,
+        selectedSubjectId:
+          current.selectedSubjectId === subjectId
+            ? nextSubject?.id ?? null
+            : current.selectedSubjectId,
+        selectedChapterId:
+          current.selectedSubjectId === subjectId
+            ? nextChapter?.id ?? null
+            : current.selectedChapterId,
+        selectedPageId:
+          current.selectedSubjectId === subjectId
+            ? nextChapter?.pages[0]?.id ?? null
+            : current.selectedPageId
+      };
+    });
+  };
+
+  const addChapter = (targetSubjectId = subject?.id) => {
+    if (!targetSubjectId) return;
+
+    const targetSubject = state.subjects.find(item => item.id === targetSubjectId);
+    if (!targetSubject) return;
+
     const title = prompt("Nom du chapitre :")?.trim();
     if (!title) return;
+
     const chapterId = crypto.randomUUID();
     const pageId = crypto.randomUUID();
-    update(s => ({
-      ...s,
-      subjects: s.subjects.map(item => item.id === subject.id ? {
-        ...item,
-        chapters: [...item.chapters, {
-          id: chapterId,
-          title,
-          favorite: false,
-          pages: [{ id: pageId, title: "Page 1", dataUrl: "", paper: "grid", latex: "" }]
-        }]
-      } : item),
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(item =>
+        item.id === targetSubjectId
+          ? {
+              ...item,
+              chapters: [
+                ...item.chapters,
+                {
+                  id: chapterId,
+                  title,
+                  favorite: false,
+                  pages: [
+                    {
+                      id: pageId,
+                      title: "Page 1",
+                      dataUrl: "",
+                      paper: "grid",
+                      latex: ""
+                    }
+                  ]
+                }
+              ]
+            }
+          : item
+      ),
+      selectedSubjectId: targetSubjectId,
       selectedChapterId: chapterId,
       selectedPageId: pageId
     }));
+
+    setExpandedSubjects(current => ({ ...current, [targetSubjectId]: true }));
+  };
+
+  const renameChapter = (subjectId: string, chapterId: string) => {
+    const selectedSubject = state.subjects.find(item => item.id === subjectId);
+    const selectedChapter = selectedSubject?.chapters.find(item => item.id === chapterId);
+    if (!selectedChapter) return;
+
+    const title = prompt("Nouveau nom du chapitre :", selectedChapter.title)?.trim();
+    if (!title || title === selectedChapter.title) return;
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(item =>
+        item.id === subjectId
+          ? {
+              ...item,
+              chapters: item.chapters.map(currentChapter =>
+                currentChapter.id === chapterId
+                  ? { ...currentChapter, title }
+                  : currentChapter
+              )
+            }
+          : item
+      )
+    }));
+  };
+
+  const deleteChapter = (subjectId: string, chapterId: string) => {
+    const selectedSubject = state.subjects.find(item => item.id === subjectId);
+    const selectedChapter = selectedSubject?.chapters.find(item => item.id === chapterId);
+    if (!selectedChapter) return;
+
+    const confirmed = confirm(
+      `Supprimer le chapitre « ${selectedChapter.title} » et toutes ses pages ?\n\nCette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    update(current => {
+      const updatedSubjects = current.subjects.map(item => {
+        if (item.id !== subjectId) return item;
+        return {
+          ...item,
+          chapters: item.chapters.filter(currentChapter => currentChapter.id !== chapterId)
+        };
+      });
+
+      if (current.selectedChapterId !== chapterId) {
+        return { ...current, subjects: updatedSubjects };
+      }
+
+      const updatedSubject = updatedSubjects.find(item => item.id === subjectId);
+      const nextChapter = updatedSubject?.chapters[0];
+
+      return {
+        ...current,
+        subjects: updatedSubjects,
+        selectedChapterId: nextChapter?.id ?? null,
+        selectedPageId: nextChapter?.pages[0]?.id ?? null
+      };
+    });
   };
 
   const addPage = () => {
     if (!subject || !chapter) return;
+
     const id = crypto.randomUUID();
-    update(s => ({
-      ...s,
-      subjects: s.subjects.map(sub => sub.id === subject.id ? {
-        ...sub,
-        chapters: sub.chapters.map(ch => ch.id === chapter.id ? {
-          ...ch,
-          pages: [...ch.pages, { id, title: `Page ${ch.pages.length + 1}`, dataUrl: "", paper: "grid", latex: "" }]
-        } : ch)
-      } : sub),
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter =>
+                currentChapter.id === chapter.id
+                  ? {
+                      ...currentChapter,
+                      pages: [
+                        ...currentChapter.pages,
+                        {
+                          id,
+                          title: `Page ${currentChapter.pages.length + 1}`,
+                          dataUrl: "",
+                          paper: "grid",
+                          latex: ""
+                        }
+                      ]
+                    }
+                  : currentChapter
+              )
+            }
+          : currentSubject
+      ),
       selectedPageId: id
     }));
   };
 
+  const renamePage = (pageId: string) => {
+    if (!subject || !chapter) return;
+    const selectedPage = chapter.pages.find(item => item.id === pageId);
+    if (!selectedPage) return;
+
+    const title = prompt("Nouveau nom de la page :", selectedPage.title)?.trim();
+    if (!title || title === selectedPage.title) return;
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter =>
+                currentChapter.id === chapter.id
+                  ? {
+                      ...currentChapter,
+                      pages: currentChapter.pages.map(currentPage =>
+                        currentPage.id === pageId ? { ...currentPage, title } : currentPage
+                      )
+                    }
+                  : currentChapter
+              )
+            }
+          : currentSubject
+      )
+    }));
+  };
+
+  const deletePage = (pageId: string) => {
+    if (!subject || !chapter) return;
+    const selectedPage = chapter.pages.find(item => item.id === pageId);
+    if (!selectedPage) return;
+
+    if (chapter.pages.length === 1) {
+      alert("Un chapitre doit toujours contenir au moins une page.");
+      return;
+    }
+
+    const confirmed = confirm(`Supprimer « ${selectedPage.title} » ?`);
+    if (!confirmed) return;
+
+    update(current => {
+      let nextPageId = current.selectedPageId;
+
+      const subjects = current.subjects.map(currentSubject => {
+        if (currentSubject.id !== subject.id) return currentSubject;
+
+        return {
+          ...currentSubject,
+          chapters: currentSubject.chapters.map(currentChapter => {
+            if (currentChapter.id !== chapter.id) return currentChapter;
+
+            const pages = currentChapter.pages.filter(currentPage => currentPage.id !== pageId);
+            if (current.selectedPageId === pageId) {
+              nextPageId = pages[0]?.id ?? null;
+            }
+
+            return { ...currentChapter, pages };
+          })
+        };
+      });
+
+      return { ...current, subjects, selectedPageId: nextPageId };
+    });
+  };
+
   const updatePage = (changes: Partial<NonNullable<typeof page>>) => {
     if (!subject || !chapter || !page) return;
-    update(s => ({
-      ...s,
-      subjects: s.subjects.map(sub => sub.id === subject.id ? {
-        ...sub,
-        chapters: sub.chapters.map(ch => ch.id === chapter.id ? {
-          ...ch,
-          pages: ch.pages.map(pg => pg.id === page.id ? { ...pg, ...changes } : pg)
-        } : ch)
-      } : sub)
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter =>
+                currentChapter.id === chapter.id
+                  ? {
+                      ...currentChapter,
+                      pages: currentChapter.pages.map(currentPage =>
+                        currentPage.id === page.id
+                          ? { ...currentPage, ...changes }
+                          : currentPage
+                      )
+                    }
+                  : currentChapter
+              )
+            }
+          : currentSubject
+      )
     }));
   };
 
   const toggleFavorite = () => {
     if (!subject || !chapter) return;
-    update(s => ({
-      ...s,
-      subjects: s.subjects.map(sub => sub.id === subject.id ? {
-        ...sub,
-        chapters: sub.chapters.map(ch => ch.id === chapter.id ? { ...ch, favorite: !ch.favorite } : ch)
-      } : sub)
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter =>
+                currentChapter.id === chapter.id
+                  ? { ...currentChapter, favorite: !currentChapter.favorite }
+                  : currentChapter
+              )
+            }
+          : currentSubject
+      )
     }));
   };
 
-
   const insertLatexBlock = (kind: string) => {
     if (!page) return;
+
     const blocks: Record<string, string> = {
       definition: "\\begin{definition}\n\n\\end{definition}",
       theoreme: "\\begin{theoreme}\n\n\\end{theoreme}",
@@ -118,58 +411,226 @@ export default function App() {
       equation: "\\[\n\n\\]",
       align: "\\begin{align*}\n\n\\end{align*}"
     };
+
     const block = blocks[kind];
     if (!block) return;
-    updatePage({ latex: `${page.latex}${page.latex ? "\n\n" : ""}${block}` });
+
+    updatePage({
+      latex: `${page.latex}${page.latex ? "\n\n" : ""}${block}`
+    });
   };
 
   const exportChapterTex = () => {
     if (!subject || !chapter) return;
+
     const tex = buildLatexDocument(subject.title, chapter.title, chapter.pages);
     const safeName = chapter.title.toLowerCase().replace(/[^a-z0-9à-ÿ]+/gi, "-");
     downloadTextFile(`${safeName || "chapitre"}.tex`, tex);
   };
 
-  const filteredChapters = useMemo(() => {
-    const query = search.toLowerCase();
-    return subject?.chapters.filter(ch => ch.title.toLowerCase().includes(query)) ?? [];
-  }, [subject, search]);
+  const filteredSubjects = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return state.subjects;
+
+    return state.subjects
+      .map(currentSubject => ({
+        ...currentSubject,
+        chapters: currentSubject.chapters.filter(currentChapter =>
+          currentSubject.title.toLowerCase().includes(query) ||
+          currentChapter.title.toLowerCase().includes(query)
+        )
+      }))
+      .filter(currentSubject =>
+        currentSubject.title.toLowerCase().includes(query) ||
+        currentSubject.chapters.length > 0
+      );
+  }, [state.subjects, search]);
 
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand"><BookOpen/><div><strong>MathMaster Notes</strong><span>Cahier numérique de mathématiques</span></div></div>
-        <div className="search"><Search size={18}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un chapitre…"/></div>
+        <div className="brand">
+          <BookOpen />
+          <div>
+            <strong>MathMaster Notes</strong>
+            <span>Cahier numérique de mathématiques</span>
+          </div>
+        </div>
+
+        <div className="search">
+          <Search size={18} />
+          <input
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder="Rechercher une matière ou un chapitre…"
+          />
+        </div>
       </header>
 
-      <div className="layout">
-        <aside className="sidebar subjects">
-          <div className="panel-title"><span>Matières</span><button title="Ajouter une matière" onClick={addSubject}><FolderPlus size={18}/></button></div>
-          {state.subjects.map(item => (
-            <button key={item.id} className={`nav-item ${item.id === subject?.id ? "selected" : ""}`} onClick={() => setState(s => ({...s, selectedSubjectId: item.id, selectedChapterId: item.chapters[0]?.id ?? null, selectedPageId: item.chapters[0]?.pages[0]?.id ?? null}))}>
-              {item.title}
+      <div className="layout explorer-layout">
+        <aside className="sidebar explorer">
+          <div className="panel-title">
+            <span>Mes cours</span>
+            <button title="Ajouter une matière" onClick={addSubject}>
+              <FolderPlus size={18} />
             </button>
-          ))}
-        </aside>
+          </div>
 
-        <aside className="sidebar chapters">
-          <div className="panel-title"><span>Chapitres</span><button title="Ajouter un chapitre" onClick={addChapter}><Plus size={18}/></button></div>
-          {filteredChapters.map(item => (
-            <button key={item.id} className={`nav-item chapter-item ${item.id === chapter?.id ? "selected" : ""}`} onClick={() => setState(s => ({...s, selectedChapterId: item.id, selectedPageId: item.pages[0]?.id ?? null}))}>
-              <span>{item.title}</span>{item.favorite && <Star size={15} fill="currentColor"/>}
-            </button>
-          ))}
+          <div className="tree">
+            {filteredSubjects.map(currentSubject => {
+              const expanded =
+                Boolean(search.trim()) || expandedSubjects[currentSubject.id] === true;
+              const selected = currentSubject.id === subject?.id;
+
+              return (
+                <div className="tree-subject" key={currentSubject.id}>
+                  <div className={`tree-row subject-row ${selected ? "selected" : ""}`}>
+                    <button
+                      className="tree-chevron"
+                      title={expanded ? "Replier" : "Déplier"}
+                      onClick={() =>
+                        setExpandedSubjects(current => ({
+                          ...current,
+                          [currentSubject.id]: !expanded
+                        }))
+                      }
+                    >
+                      {expanded ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+                    </button>
+
+                    <button
+                      className="tree-label"
+                      onClick={() => selectSubject(currentSubject.id)}
+                      onDoubleClick={() => renameSubject(currentSubject.id)}
+                    >
+                      {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
+                      <span>{currentSubject.title}</span>
+                    </button>
+
+                    <div className="tree-actions">
+                      <button
+                        title="Ajouter un chapitre"
+                        onClick={() => addChapter(currentSubject.id)}
+                      >
+                        <Plus size={15} />
+                      </button>
+                      <button
+                        title="Renommer la matière"
+                        onClick={() => renameSubject(currentSubject.id)}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        className="danger"
+                        title="Supprimer la matière"
+                        onClick={() => deleteSubject(currentSubject.id)}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {expanded && (
+                    <div className="tree-children">
+                      {currentSubject.chapters.length === 0 && (
+                        <button
+                          className="tree-empty"
+                          onClick={() => addChapter(currentSubject.id)}
+                        >
+                          + Ajouter un premier chapitre
+                        </button>
+                      )}
+
+                      {currentSubject.chapters.map(currentChapter => (
+                        <div
+                          className={`tree-row chapter-row ${
+                            currentChapter.id === chapter?.id ? "selected" : ""
+                          }`}
+                          key={currentChapter.id}
+                        >
+                          <button
+                            className="tree-label"
+                            onClick={() =>
+                              selectChapter(currentSubject.id, currentChapter.id)
+                            }
+                            onDoubleClick={() =>
+                              renameChapter(currentSubject.id, currentChapter.id)
+                            }
+                          >
+                            <BookOpen size={16} />
+                            <span>{currentChapter.title}</span>
+                            {currentChapter.favorite && (
+                              <Star size={14} fill="currentColor" />
+                            )}
+                          </button>
+
+                          <div className="tree-actions">
+                            <button
+                              title="Renommer le chapitre"
+                              onClick={() =>
+                                renameChapter(currentSubject.id, currentChapter.id)
+                              }
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              className="danger"
+                              title="Supprimer le chapitre"
+                              onClick={() =>
+                                deleteChapter(currentSubject.id, currentChapter.id)
+                              }
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </aside>
 
         <main className="workspace">
           {page && chapter ? (
             <>
               <div className="document-header">
-                <div><h1>{chapter.title}</h1><p>{subject?.title} · {page.title}</p></div>
+                <div>
+                  <h1>{chapter.title}</h1>
+                  <p>
+                    {subject?.title} · {page.title}
+                  </p>
+                </div>
+
                 <div className="document-actions">
-                  <button title="Exporter le chapitre en LaTeX" onClick={exportChapterTex}><FileCode2 size={18}/></button>
-                  <button title="Ajouter aux favoris" onClick={toggleFavorite}><Star size={18} fill={chapter.favorite ? "currentColor" : "none"}/></button>
-                  <select value={page.paper} onChange={e => updatePage({paper: e.target.value as PaperType})}>
+                  <button
+                    title="Renommer le chapitre"
+                    onClick={() =>
+                      subject && renameChapter(subject.id, chapter.id)
+                    }
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    title="Exporter le chapitre en LaTeX"
+                    onClick={exportChapterTex}
+                  >
+                    <FileCode2 size={18} />
+                  </button>
+                  <button title="Ajouter aux favoris" onClick={toggleFavorite}>
+                    <Star
+                      size={18}
+                      fill={chapter.favorite ? "currentColor" : "none"}
+                    />
+                  </button>
+                  <select
+                    value={page.paper}
+                    onChange={event =>
+                      updatePage({ paper: event.target.value as PaperType })
+                    }
+                  >
                     <option value="blank">Feuille blanche</option>
                     <option value="grid">Petits carreaux</option>
                     <option value="dots">Points</option>
@@ -179,35 +640,98 @@ export default function App() {
               </div>
 
               <div className="page-tabs">
-                {chapter.pages.map(item => (
-                  <button key={item.id} className={item.id === page.id ? "selected" : ""} onClick={() => setState(s => ({...s, selectedPageId: item.id}))}>{item.title}</button>
+                {chapter.pages.map(currentPage => (
+                  <div
+                    className={`page-tab ${
+                      currentPage.id === page.id ? "selected" : ""
+                    }`}
+                    key={currentPage.id}
+                  >
+                    <button
+                      className="page-tab-label"
+                      onClick={() =>
+                        setState(current => ({
+                          ...current,
+                          selectedPageId: currentPage.id
+                        }))
+                      }
+                      onDoubleClick={() => renamePage(currentPage.id)}
+                    >
+                      {currentPage.title}
+                    </button>
+                    <button
+                      className="page-tab-delete"
+                      title="Supprimer cette page"
+                      onClick={() => deletePage(currentPage.id)}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
-                <button className="add-page" onClick={addPage}><FilePlus2 size={17}/> Nouvelle page</button>
+
+                <button className="add-page" onClick={addPage}>
+                  <FilePlus2 size={17} />
+                  Nouvelle page
+                </button>
               </div>
 
-              <CanvasBoard dataUrl={page.dataUrl} paper={page.paper} onSave={dataUrl => updatePage({dataUrl})}/>
+              <CanvasBoard
+                dataUrl={page.dataUrl}
+                paper={page.paper}
+                onSave={dataUrl => updatePage({ dataUrl })}
+              />
 
               <section className="latex-panel">
                 <div>
                   <h2>LaTeX</h2>
                   <p>Le contenu utilise automatiquement ton préambule MathMaster.</p>
+
                   <div className="latex-buttons">
-                    <button onClick={() => insertLatexBlock("definition")}>Définition</button>
-                    <button onClick={() => insertLatexBlock("theoreme")}>Théorème</button>
-                    <button onClick={() => insertLatexBlock("proposition")}>Proposition</button>
-                    <button onClick={() => insertLatexBlock("lemme")}>Lemme</button>
-                    <button onClick={() => insertLatexBlock("proof")}>Démonstration</button>
-                    <button onClick={() => insertLatexBlock("exercice")}>Exercice</button>
-                    <button onClick={() => insertLatexBlock("correction")}>Correction</button>
-                    <button onClick={() => insertLatexBlock("equation")}>Équation</button>
-                    <button onClick={() => insertLatexBlock("align")}>Align</button>
+                    <button onClick={() => insertLatexBlock("definition")}>
+                      Définition
+                    </button>
+                    <button onClick={() => insertLatexBlock("theoreme")}>
+                      Théorème
+                    </button>
+                    <button onClick={() => insertLatexBlock("proposition")}>
+                      Proposition
+                    </button>
+                    <button onClick={() => insertLatexBlock("lemme")}>
+                      Lemme
+                    </button>
+                    <button onClick={() => insertLatexBlock("proof")}>
+                      Démonstration
+                    </button>
+                    <button onClick={() => insertLatexBlock("exercice")}>
+                      Exercice
+                    </button>
+                    <button onClick={() => insertLatexBlock("correction")}>
+                      Correction
+                    </button>
+                    <button onClick={() => insertLatexBlock("equation")}>
+                      Équation
+                    </button>
+                    <button onClick={() => insertLatexBlock("align")}>
+                      Align
+                    </button>
                   </div>
                 </div>
-                <textarea value={page.latex} onChange={e => updatePage({latex: e.target.value})} placeholder={"Exemple :\n\\begin{theoreme}\nTout groupe d'ordre premier est cyclique.\n\\end{theoreme}"}/>
+
+                <textarea
+                  value={page.latex}
+                  onChange={event => updatePage({ latex: event.target.value })}
+                  placeholder={
+                    "Exemple :\n\\begin{theoreme}\nTout groupe d'ordre premier est cyclique.\n\\end{theoreme}"
+                  }
+                />
               </section>
             </>
           ) : (
-            <div className="empty-state"><BookOpen size={52}/><h2>Crée un chapitre pour commencer</h2><button onClick={addChapter}>Nouveau chapitre</button></div>
+            <div className="empty-state">
+              <BookOpen size={52} />
+              <h2>Crée un chapitre pour commencer</h2>
+              <button onClick={() => addChapter()}>Nouveau chapitre</button>
+            </div>
           )}
         </main>
       </div>
