@@ -1,0 +1,20 @@
+MATHMASTER NOTES — MISE À JOUR v0.3.2
+
+Remplace uniquement :
+- src/components/CanvasBoard.tsx
+- src/styles.css
+- package.json
+
+Nouveautés :
+- écriture plus fluide avec courbes ;
+- pression du stylet améliorée ;
+- surligneur ;
+- gomme améliorée ;
+- outils segment, rectangle et ellipse ;
+- annuler et rétablir ;
+- zoom de 50 % à 250 % ;
+- déplacement de la feuille ;
+- raccourci Ctrl + molette pour zoomer.
+
+Commit conseillé :
+Amélioration du moteur de dessin v0.3.2

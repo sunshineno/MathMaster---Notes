@@ -492,3 +492,60 @@ canvas {
     opacity: 1;
   }
 }
+
+
+/* v0.3.2 — outils de dessin et zoom */
+.tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.zoom-controls .zoom-value {
+  min-width: 64px;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.canvas-help {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.canvas-wrap {
+  max-height: 72vh;
+  overflow: auto;
+  position: relative;
+}
+
+.canvas-stage {
+  position: relative;
+  margin: 0 auto;
+  transform-origin: top left;
+}
+
+.canvas-stage canvas {
+  max-width: none;
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 700px) {
+  .tool-group {
+    flex-wrap: wrap;
+  }
+
+  .canvas-wrap {
+    max-height: 66vh;
+  }
+}
