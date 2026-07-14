@@ -895,3 +895,45 @@ canvas {
     margin-left: auto;
   }
 }
+
+/* v0.5.0 — page longue, gestes tactiles et sélection */
+.canvas-wrap-long {
+  max-height: 74vh;
+  min-height: 560px;
+  background: #b8c1ce;
+  scroll-behavior: auto;
+  touch-action: none;
+}
+
+.canvas-stage {
+  position: relative;
+}
+
+.canvas-stage canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-selection-box {
+  position: absolute;
+  z-index: 3;
+  border: 2px dashed #2563eb;
+  background: rgb(37 99 235 / 8%);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%) inset;
+  pointer-events: none;
+}
+
+.selection-tools {
+  background: #dbeafe;
+}
+
+.selection-tools button {
+  background: transparent;
+}
+
+@media (max-width: 700px) {
+  .canvas-wrap-long {
+    min-height: 520px;
+    max-height: 70vh;
+  }
+}

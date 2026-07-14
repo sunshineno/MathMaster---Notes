@@ -1,23 +1,20 @@
-MATHMASTER NOTES — v0.4.0 BLOCS MATHÉMATIQUES
+MATHMASTER NOTES — v0.5.0 PRISE DE NOTES AVANCÉE
 
-Remplace :
-- src/App.tsx
-- src/types.ts
-- src/latexTemplate.ts
+Remplace uniquement :
+- src/components/CanvasBoard.tsx
 - src/styles.css
 - package.json
 
-Ajoute :
-- src/components/MathBlocksEditor.tsx
-
 Nouveautés :
-- blocs Définition, Théorème, Proposition, Lemme, Corollaire ;
-- blocs Démonstration, Exemple, Remarque, Exercice, Correction ;
-- bloc Équation et texte libre ;
-- réorganisation des blocs ;
-- duplication, repli et suppression ;
-- export automatique vers les environnements LaTeX correspondants ;
-- compatibilité avec les anciennes pages utilisant le champ LaTeX libre.
+- page longue de 2400 px ;
+- zoom tactile à deux doigts ;
+- déplacement tactile naturel ;
+- sélection rectangulaire ;
+- déplacement d'une sélection ;
+- copier, couper, coller et supprimer une zone ;
+- historique adapté aux grandes pages ;
+- stylet et formes conservés ;
+- sauvegarde automatique conservée.
 
 Commit conseillé :
-Ajout des blocs mathématiques v0.4.0
+Ajout de la prise de notes avancée v0.5.0
