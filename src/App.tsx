@@ -27,6 +27,7 @@ import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
 import AppTopBar from "./components/AppTopBar";
 import ExplorerSidebar from "./components/ExplorerSidebar";
+import PageNavigator from "./components/PageNavigator";
 import {
   clearRecoverySnapshot,
   downloadBackup,
@@ -391,6 +392,70 @@ export default function App() {
           : currentSubject
       ),
       selectedPageId: id
+    }));
+  };
+
+  const duplicatePage = (pageId: string) => {
+    if (!subject || !chapter) return;
+    const sourcePage = chapter.pages.find(item => item.id === pageId);
+    if (!sourcePage) return;
+
+    const duplicatedPage = {
+      ...sourcePage,
+      id: crypto.randomUUID(),
+      title: `${sourcePage.title} — copie`,
+      blocks: sourcePage.blocks?.map(block => ({
+        ...block,
+        id: crypto.randomUUID()
+      })) ?? []
+    };
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter => {
+                if (currentChapter.id !== chapter.id) return currentChapter;
+                const sourceIndex = currentChapter.pages.findIndex(
+                  currentPage => currentPage.id === pageId
+                );
+                const pages = [...currentChapter.pages];
+                pages.splice(sourceIndex + 1, 0, duplicatedPage);
+                return { ...currentChapter, pages };
+              })
+            }
+          : currentSubject
+      ),
+      selectedPageId: duplicatedPage.id
+    }));
+  };
+
+  const reorderPages = (sourcePageId: string, targetPageId: string) => {
+    if (!subject || !chapter || sourcePageId === targetPageId) return;
+
+    update(current => ({
+      ...current,
+      subjects: current.subjects.map(currentSubject =>
+        currentSubject.id === subject.id
+          ? {
+              ...currentSubject,
+              chapters: currentSubject.chapters.map(currentChapter => {
+                if (currentChapter.id !== chapter.id) return currentChapter;
+
+                const pages = [...currentChapter.pages];
+                const sourceIndex = pages.findIndex(page => page.id === sourcePageId);
+                const targetIndex = pages.findIndex(page => page.id === targetPageId);
+                if (sourceIndex < 0 || targetIndex < 0) return currentChapter;
+
+                const [movedPage] = pages.splice(sourceIndex, 1);
+                pages.splice(targetIndex, 0, movedPage);
+                return { ...currentChapter, pages };
+              })
+            }
+          : currentSubject
+      )
     }));
   };
 
@@ -794,48 +859,18 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="page-tabs">
-                {chapter.pages.map(currentPage => (
-                  <div
-                    className={`page-tab ${
-                      currentPage.id === page.id ? "selected" : ""
-                    }`}
-                    key={currentPage.id}
-                  >
-                    <button
-                      className="page-tab-label"
-                      onClick={() =>
-                        setState(current => ({
-                          ...current,
-                          selectedPageId: currentPage.id
-                        }))
-                      }
-                      onDoubleClick={() => renamePage(currentPage.id)}
-                    >
-                      {currentPage.backgroundDataUrl && (
-                        <img
-                          className="page-tab-thumbnail"
-                          src={currentPage.backgroundDataUrl}
-                          alt=""
-                        />
-                      )}
-                      <span>{currentPage.title}</span>
-                    </button>
-                    <button
-                      className="page-tab-delete"
-                      title="Supprimer cette page"
-                      onClick={() => deletePage(currentPage.id)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                <button className="add-page" onClick={addPage}>
-                  <FilePlus2 size={17} />
-                  Nouvelle page
-                </button>
-              </div>
+              <PageNavigator
+                pages={chapter.pages}
+                selectedPageId={page.id}
+                onSelect={pageId =>
+                  setState(current => ({ ...current, selectedPageId: pageId }))
+                }
+                onAdd={addPage}
+                onRename={renamePage}
+                onDuplicate={duplicatePage}
+                onDelete={deletePage}
+                onReorder={reorderPages}
+              />
 
               <CanvasBoard
                 dataUrl={page.dataUrl}

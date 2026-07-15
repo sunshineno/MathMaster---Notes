@@ -1,19 +1,21 @@
-MATHMASTER NOTES — v0.9.0 / MILESTONE 1
+MATHMASTER NOTES — v1.2.0 BARRE D’OUTILS RAPIDE
 
 Remplace :
-- src/App.tsx
-- src/components/MathBlocksEditor.tsx
+- src/components/CanvasBoard.tsx
 - src/styles.css
 - package.json
 
 Nouveautés :
-- blocs Définition en bleu, texte noir ;
-- blocs Théorème / Proposition en rouge, texte noir ;
-- blocs Exemple / Exercice en noir, texte noir ;
-- barre Mode CM pour créer rapidement les blocs ;
-- modèles de chapitre : cours, TD, annales, recherche ou vide ;
-- recherche dans les matières, chapitres, pages, titres et contenus des blocs ;
-- mode plein écran pour écrire sans distraction.
+- stylos rapides noir, bleu, rouge et vert ;
+- épaisseurs rapides 2, 4 et 7 ;
+- mémorisation automatique du stylo, de la couleur, de l’épaisseur,
+  du zoom, du mode d’entrée et du rejet de paume ;
+- mode compact pour masquer les outils avancés pendant un cours ;
+- raccourcis P, H, E, S, Espace, Ctrl+Z et Ctrl+Y.
+
+Après copie :
+npm run build
+npm run dev
 
 Commit conseillé :
-Milestone 1 - mode CM et couleurs des blocs v0.9.0
+Barre d’outils rapide et réglages persistants v1.2.0

@@ -1,7 +1,27 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Circle,
+  Clipboard,
+  ClipboardCopy,
+  Copy,
+  Download,
+  Eraser,
+  Hand,
+  Highlighter,
+  Minus,
+  MousePointer2,
+  PenLine,
+  Plus,
+  RectangleHorizontal,
+  Redo2,
+  RotateCcw,
+  Save,
+  Scissors,
+  Settings2,
+  Slash,
+  Trash2
+} from "lucide-react";
 import type { PaperType } from "../types";
-import DrawingToolbar from "./DrawingToolbar";
-import { type DrawingSettings, type DrawingTool, type InputMode } from "../editor/drawingTypes";
 
 interface Props {
   dataUrl: string;
@@ -9,6 +29,18 @@ interface Props {
   paper: PaperType;
   onSave: (dataUrl: string) => void;
 }
+
+type InputMode = "stylus" | "hybrid" | "read";
+
+type Tool =
+  | "pen"
+  | "highlighter"
+  | "eraser"
+  | "pan"
+  | "select"
+  | "line"
+  | "rectangle"
+  | "ellipse";
 
 interface Point {
   x: number;
@@ -31,6 +63,15 @@ interface TouchPoint {
 const CANVAS_WIDTH = 1400;
 const CANVAS_HEIGHT = 2400;
 const DRAWING_SETTINGS_KEY = "mathmaster-drawing-settings-v1";
+
+interface DrawingSettings {
+  tool: Tool;
+  width: number;
+  color: string;
+  zoom: number;
+  inputMode: InputMode;
+  palmRejection: boolean;
+}
 
 const DEFAULT_DRAWING_SETTINGS: DrawingSettings = {
   tool: "pen",
@@ -80,7 +121,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave 
   const penActiveUntil = useRef(0);
 
   const initialSettings = useRef(loadDrawingSettings());
-  const [tool, setTool] = useState<DrawingTool>(initialSettings.current.tool);
+  const [tool, setTool] = useState<Tool>(initialSettings.current.tool);
   const [width, setWidth] = useState(initialSettings.current.width);
   const [color, setColor] = useState(initialSettings.current.color);
   const [zoom, setZoom] = useState(initialSettings.current.zoom);
@@ -95,7 +136,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave 
     initialSettings.current.palmRejection
   );
   const [compactToolbar, setCompactToolbar] = useState(false);
-  const temporaryTool = useRef<DrawingTool | null>(null);
+  const temporaryTool = useRef<Tool | null>(null);
 
   useEffect(() => {
     const settings: DrawingSettings = {
@@ -854,35 +895,152 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave 
 
   return (
     <div className="canvas-section">
-      <DrawingToolbar
-        tool={tool}
-        width={width}
-        color={color}
-        zoom={zoom}
-        inputMode={inputMode}
-        palmRejection={palmRejection}
-        compactToolbar={compactToolbar}
-        hasSelection={Boolean(selection)}
-        hasClipboard={Boolean(clipboardRef.current)}
-        canUndo={history.length > 0}
-        canRedo={future.length > 0}
-        onToolChange={setTool}
-        onWidthChange={setWidth}
-        onColorChange={setColor}
-        onZoomChange={changeZoom}
-        onInputModeChange={setInputMode}
-        onPalmRejectionChange={setPalmRejection}
-        onCompactToolbarChange={setCompactToolbar}
-        onCopySelection={copySelection}
-        onCutSelection={cutSelection}
-        onPasteSelection={pasteSelection}
-        onDeleteSelection={deleteSelection}
-        onUndo={undo}
-        onRedo={redo}
-        onClear={clear}
-        onSave={save}
-        onDownload={download}
-      />
+      <div className="input-mode-bar">
+        <label>
+          Mode d’entrée
+          <select
+            value={inputMode}
+            onChange={event => setInputMode(event.target.value as InputMode)}
+          >
+            <option value="stylus">Stylet uniquement</option>
+            <option value="hybrid">Stylet + doigt</option>
+            <option value="read">Lecture / déplacement</option>
+          </select>
+        </label>
+
+        <label className="palm-toggle">
+          <input
+            type="checkbox"
+            checked={palmRejection}
+            onChange={event => setPalmRejection(event.target.checked)}
+          />
+          Rejet de paume
+        </label>
+
+        <span className="input-mode-hint">
+          {inputMode === "stylus"
+            ? "Le doigt ne dessine pas ; deux doigts servent au zoom."
+            : inputMode === "hybrid"
+              ? "Le stylet et le doigt peuvent dessiner."
+              : "L’écriture est désactivée."}
+        </span>
+      </div>
+
+      <div className="drawing-quickbar">
+        <div className="pen-presets" aria-label="Stylos rapides">
+          {[
+            { label: "Noir", value: "#111827" },
+            { label: "Bleu", value: "#2563eb" },
+            { label: "Rouge", value: "#dc2626" },
+            { label: "Vert", value: "#16a34a" }
+          ].map(preset => (
+            <button
+              key={preset.value}
+              className={`pen-preset ${color === preset.value ? "selected" : ""}`}
+              title={`Stylo ${preset.label}`}
+              onClick={() => {
+                setColor(preset.value);
+                setTool("pen");
+              }}
+            >
+              <span style={{ backgroundColor: preset.value }} />
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="width-presets" aria-label="Épaisseurs rapides">
+          {[2, 4, 7].map(presetWidth => (
+            <button
+              key={presetWidth}
+              className={width === presetWidth ? "selected" : ""}
+              onClick={() => setWidth(presetWidth)}
+              title={`Épaisseur ${presetWidth}`}
+            >
+              <span style={{ height: `${Math.max(2, presetWidth)}px` }} />
+              {presetWidth}
+            </button>
+          ))}
+        </div>
+
+        <button
+          className={`compact-toggle ${compactToolbar ? "selected" : ""}`}
+          onClick={() => setCompactToolbar(current => !current)}
+          title="Afficher ou masquer les outils avancés"
+        >
+          <Settings2 size={17} />
+          {compactToolbar ? "Outils complets" : "Mode compact"}
+        </button>
+      </div>
+
+      <div className={`toolbar ${compactToolbar ? "toolbar-compact" : ""}`}>
+        <div className="tool-group">
+          <button className={tool === "pen" ? "active" : ""} onClick={() => setTool("pen")}>
+            <PenLine size={18} /> Stylo
+          </button>
+          <button className={tool === "highlighter" ? "active" : ""} onClick={() => setTool("highlighter")}>
+            <Highlighter size={18} /> Surligneur
+          </button>
+          <button className={tool === "eraser" ? "active" : ""} onClick={() => setTool("eraser")}>
+            <Eraser size={18} /> Gomme
+          </button>
+          <button className={tool === "pan" ? "active" : ""} onClick={() => setTool("pan")}>
+            <Hand size={18} /> Déplacer
+          </button>
+          <button className={tool === "select" ? "active" : ""} onClick={() => setTool("select")}>
+            <MousePointer2 size={18} /> Sélection
+          </button>
+        </div>
+
+        <div className="tool-group">
+          <button className={tool === "line" ? "active" : ""} onClick={() => setTool("line")} title="Tracer un segment">
+            <Slash size={18} />
+          </button>
+          <button className={tool === "rectangle" ? "active" : ""} onClick={() => setTool("rectangle")} title="Tracer un rectangle">
+            <RectangleHorizontal size={18} />
+          </button>
+          <button className={tool === "ellipse" ? "active" : ""} onClick={() => setTool("ellipse")} title="Tracer une ellipse">
+            <Circle size={18} />
+          </button>
+        </div>
+
+        {selection && (
+          <div className="tool-group selection-tools">
+            <button onClick={copySelection} title="Copier la sélection"><Copy size={17} /></button>
+            <button onClick={cutSelection} title="Couper la sélection"><Scissors size={17} /></button>
+            <button onClick={pasteSelection} title="Coller"><Clipboard size={17} /></button>
+            <button onClick={deleteSelection} title="Supprimer la sélection"><Trash2 size={17} /></button>
+          </div>
+        )}
+        {!selection && clipboardRef.current && (
+          <div className="tool-group selection-tools">
+            <button onClick={pasteSelection} title="Coller"><ClipboardCopy size={17} /> Coller</button>
+          </div>
+        )}
+
+        <label>
+          Épaisseur
+          <input type="range" min="1" max="30" value={width} onChange={event => setWidth(Number(event.target.value))} />
+        </label>
+        <input className="color-picker" type="color" value={color} onChange={event => setColor(event.target.value)} aria-label="Couleur du trait" />
+
+        <div className="tool-group advanced-tools">
+          <button onClick={undo} disabled={history.length === 0}><RotateCcw size={18} /> Annuler</button>
+          <button onClick={redo} disabled={future.length === 0}><Redo2 size={18} /> Rétablir</button>
+          <button onClick={clear}><Trash2 size={18} /> Effacer</button>
+        </div>
+
+        <div className="tool-group zoom-controls advanced-tools">
+          <button onClick={() => changeZoom(zoom - 0.1)} title="Dézoomer"><Minus size={17} /></button>
+          <button className="zoom-value" onClick={() => changeZoom(0.75)} title="Réinitialiser le zoom">{Math.round(zoom * 100)} %</button>
+          <button onClick={() => changeZoom(zoom + 0.1)} title="Zoomer"><Plus size={17} /></button>
+        </div>
+
+        <div className="tool-group">
+          <button onClick={save}><Save size={18} /> Enregistrer</button>
+          <button onClick={download}><Download size={18} /> PNG</button>
+        </div>
+      </div>
 
       <p className="canvas-help">
         Page longue activée. Sur tablette : pince à deux doigts pour zoomer et utilise deux doigts pour te déplacer. L’outil Sélection permet de déplacer, copier, couper ou supprimer une zone.
