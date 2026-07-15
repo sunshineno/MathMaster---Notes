@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
+import AppTopBar from "./components/AppTopBar";
+import ExplorerSidebar from "./components/ExplorerSidebar";
 import {
   clearRecoverySnapshot,
   downloadBackup,
@@ -36,6 +38,8 @@ import {
   type StorageInfo
 } from "./storage";
 import type { MathBlock, NotebookState, PaperType } from "./types";
+import { createTemplateBlocks, describeTemplates, parseChapterTemplate } from "./math/chapterTemplates";
+import { filterSubjects } from "./search/notebookSearch";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 import { exportChapterToPdf } from "./pdfExport";
 import { importPdfAsPages } from "./pdfImport";
@@ -191,59 +195,13 @@ export default function App() {
     });
   };
 
-  const createTemplateBlocks = (template: string): MathBlock[] => {
-    const make = (
-      type: MathBlock["type"],
-      title: string,
-      content = ""
-    ): MathBlock => ({
-      id: crypto.randomUUID(),
-      type,
-      title,
-      content,
-      collapsed: false
-    });
-
-    switch (template) {
-      case "cours":
-        return [
-          make("definition", "Définition"),
-          make("theoreme", "Théorème"),
-          make("proof", "Démonstration"),
-          make("exemple", "Exemple")
-        ];
-      case "td":
-        return [
-          make("exercice", "Exercice"),
-          make("correction", "Correction")
-        ];
-      case "annales":
-        return [
-          make("text", "Énoncé / informations"),
-          make("exercice", "Question"),
-          make("correction", "Correction")
-        ];
-      case "recherche":
-        return [
-          make("text", "Notes de recherche"),
-          make("proposition", "Proposition"),
-          make("proof", "Démonstration")
-        ];
-      default:
-        return [];
-    }
-  };
-
   const chooseChapterTemplate = () => {
     const answer = prompt(
-      "Modèle du chapitre : cours, td, annales, recherche ou vide",
+      `Modèle du chapitre : ${describeTemplates()}`,
       "cours"
     );
     if (answer === null) return null;
-
-    const normalized = answer.trim().toLowerCase();
-    const accepted = ["cours", "td", "annales", "recherche", "vide"];
-    return accepted.includes(normalized) ? normalized : "vide";
+    return parseChapterTemplate(answer);
   };
 
   const toggleFocusMode = () => {
@@ -698,104 +656,24 @@ export default function App() {
     }
   };
 
-  const filteredSubjects = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return state.subjects;
-
-    const chapterMatches = (currentChapter: typeof state.subjects[number]["chapters"][number]) =>
-      currentChapter.title.toLowerCase().includes(query) ||
-      currentChapter.pages.some(currentPage =>
-        currentPage.title.toLowerCase().includes(query) ||
-        currentPage.latex.toLowerCase().includes(query) ||
-        (currentPage.blocks ?? []).some(block =>
-          block.title.toLowerCase().includes(query) ||
-          block.content.toLowerCase().includes(query)
-        )
-      );
-
-    return state.subjects
-      .map(currentSubject => ({
-        ...currentSubject,
-        chapters: currentSubject.chapters.filter(currentChapter =>
-          currentSubject.title.toLowerCase().includes(query) ||
-          chapterMatches(currentChapter)
-        )
-      }))
-      .filter(currentSubject =>
-        currentSubject.title.toLowerCase().includes(query) ||
-        currentSubject.chapters.length > 0
-      );
-  }, [state.subjects, search]);
+  const filteredSubjects = useMemo(
+    () => filterSubjects(state.subjects, search),
+    [state.subjects, search]
+  );
 
   return (
     <div className={`app ${focusMode ? "focus-mode" : ""}`}>
-      <header className="topbar">
-        <div className="brand">
-          <BookOpen />
-          <div>
-            <strong>MathMaster Notes</strong>
-            <span>Cahier numérique de mathématiques</span>
-          </div>
-        </div>
-
-        <div className="topbar-actions">
-          <div
-            className={`save-indicator save-${saveStatus}`}
-            title={
-              saveStatus === "error"
-                ? saveError
-                : persistentStorage
-                  ? "Stockage persistant activé"
-                  : "Sauvegarde locale active"
-            }
-          >
-            <ShieldCheck size={17} />
-            {saveStatus === "saving"
-              ? "Sauvegarde…"
-              : saveStatus === "error"
-                ? "Erreur de sauvegarde"
-                : "Enregistré"}
-          </div>
-
-          <div className="search">
-            <Search size={18} />
-            <input
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              placeholder="Rechercher matière, chapitre, page ou contenu…"
-            />
-          </div>
-
-          <button
-            className="backup-button"
-            onClick={exportNotebookBackup}
-            title="Télécharger une sauvegarde complète"
-          >
-            <Download size={18} />
-            Sauvegarder
-          </button>
-
-          <label
-            className="backup-button restore-button"
-            title="Restaurer une sauvegarde complète"
-          >
-            <Upload size={18} />
-            Restaurer
-            <input
-              type="file"
-              accept="application/json,.json"
-              onChange={restoreNotebookBackup}
-            />
-          </label>
-
-          {!isInstalled && installPrompt && (
-            <button className="install-button" onClick={installApp}>
-              <Download size={18} />
-              Installer
-            </button>
-          )}
-        </div>
-      </header>
+      <AppTopBar
+        search={search}
+        onSearchChange={setSearch}
+        saveStatus={saveStatus}
+        saveError={saveError}
+        persistentStorage={persistentStorage}
+        onBackup={exportNotebookBackup}
+        onRestore={restoreNotebookBackup}
+        canInstall={!isInstalled && Boolean(installPrompt)}
+        onInstall={installApp}
+      />
 
       {(saveStatus === "error" ||
         (storageInfo && storageInfo.usageRatio > 0.8)) && (
@@ -828,137 +706,27 @@ export default function App() {
       )}
 
       <div className="layout explorer-layout">
-        <aside className="sidebar explorer">
-          <div className="panel-title">
-            <span>Mes cours</span>
-            <div className="panel-title-actions">
-              {subject && (
-                <button className="danger-action" title="Supprimer la matière sélectionnée" onClick={() => deleteSubject(subject.id)}>
-                  <Trash2 size={18} />
-                </button>
-              )}
-              <button title="Ajouter une matière" onClick={addSubject}>
-                <FolderPlus size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="tree">
-            {filteredSubjects.map(currentSubject => {
-              const expanded =
-                Boolean(search.trim()) || expandedSubjects[currentSubject.id] === true;
-              const selected = currentSubject.id === subject?.id;
-
-              return (
-                <div className="tree-subject" key={currentSubject.id}>
-                  <div className={`tree-row subject-row ${selected ? "selected" : ""}`}>
-                    <button
-                      className="tree-chevron"
-                      title={expanded ? "Replier" : "Déplier"}
-                      onClick={() =>
-                        setExpandedSubjects(current => ({
-                          ...current,
-                          [currentSubject.id]: !expanded
-                        }))
-                      }
-                    >
-                      {expanded ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
-                    </button>
-
-                    <button
-                      className="tree-label"
-                      onClick={() => selectSubject(currentSubject.id)}
-                      onDoubleClick={() => renameSubject(currentSubject.id)}
-                    >
-                      {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
-                      <span>{currentSubject.title}</span>
-                    </button>
-
-                    <div className="tree-actions">
-                      <button
-                        title="Ajouter un chapitre"
-                        onClick={() => addChapter(currentSubject.id)}
-                      >
-                        <Plus size={15} />
-                      </button>
-                      <button
-                        title="Renommer la matière"
-                        onClick={() => renameSubject(currentSubject.id)}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        className="danger"
-                        title="Supprimer la matière"
-                        onClick={() => deleteSubject(currentSubject.id)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {expanded && (
-                    <div className="tree-children">
-                      {currentSubject.chapters.length === 0 && (
-                        <button
-                          className="tree-empty"
-                          onClick={() => addChapter(currentSubject.id)}
-                        >
-                          + Ajouter un premier chapitre
-                        </button>
-                      )}
-
-                      {currentSubject.chapters.map(currentChapter => (
-                        <div
-                          className={`tree-row chapter-row ${
-                            currentChapter.id === chapter?.id ? "selected" : ""
-                          }`}
-                          key={currentChapter.id}
-                        >
-                          <button
-                            className="tree-label"
-                            onClick={() =>
-                              selectChapter(currentSubject.id, currentChapter.id)
-                            }
-                            onDoubleClick={() =>
-                              renameChapter(currentSubject.id, currentChapter.id)
-                            }
-                          >
-                            <BookOpen size={16} />
-                            <span>{currentChapter.title}</span>
-                            {currentChapter.favorite && (
-                              <Star size={14} fill="currentColor" />
-                            )}
-                          </button>
-
-                          <div className="tree-actions">
-                            <button
-                              title="Renommer le chapitre"
-                              onClick={() =>
-                                renameChapter(currentSubject.id, currentChapter.id)
-                              }
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              className="danger"
-                              title="Supprimer le chapitre"
-                              onClick={() =>
-                                deleteChapter(currentSubject.id, currentChapter.id)
-                              }
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </aside>
+        <ExplorerSidebar
+          subjects={filteredSubjects}
+          selectedSubjectId={subject?.id ?? null}
+          selectedChapterId={chapter?.id ?? null}
+          expandedSubjects={expandedSubjects}
+          searchActive={Boolean(search.trim())}
+          onToggleSubject={(subjectId, expanded) =>
+            setExpandedSubjects(current => ({
+              ...current,
+              [subjectId]: !expanded
+            }))
+          }
+          onSelectSubject={selectSubject}
+          onSelectChapter={selectChapter}
+          onAddSubject={addSubject}
+          onAddChapter={subjectId => addChapter(subjectId)}
+          onRenameSubject={renameSubject}
+          onRenameChapter={renameChapter}
+          onDeleteSubject={deleteSubject}
+          onDeleteChapter={deleteChapter}
+        />
 
         <main className="workspace">
           {page && chapter ? (
