@@ -1179,3 +1179,178 @@ canvas {
 @keyframes mmn-spin {
   to { transform: rotate(360deg); }
 }
+
+
+/* v0.9.0 — Milestone 1 : couleurs mathématiques et mode CM */
+.math-block {
+  color: #111827;
+}
+
+.math-block textarea {
+  color: #111827;
+  background: #ffffff;
+}
+
+/* Définition : bleu, écriture noire */
+.math-block-definition {
+  border-color: #2563eb;
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.math-block-definition .math-block-header {
+  border-bottom-color: #93c5fd;
+  background: #dbeafe;
+}
+
+/* Théorème et proposition : rouge, écriture noire */
+.math-block-theoreme,
+.math-block-proposition {
+  border-color: #dc2626;
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.math-block-theoreme .math-block-header,
+.math-block-proposition .math-block-header {
+  border-bottom-color: #fca5a5;
+  background: #fee2e2;
+}
+
+/* Exemple et exercice : noir, écriture noire */
+.math-block-exemple,
+.math-block-exercice {
+  border-color: #111827;
+  border-left-color: #111827;
+  background: #ffffff;
+}
+
+.math-block-exemple .math-block-header,
+.math-block-exercice .math-block-header {
+  border-bottom-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+/* Les champs restent toujours noirs, quelle que soit la couleur du bloc. */
+.math-block-header,
+.math-block-header select,
+.math-block-header input,
+.math-block-header button {
+  color: #111827;
+}
+
+.cm-quickbar {
+  position: sticky;
+  top: 58px;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 14px;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+  backdrop-filter: blur(8px);
+}
+
+.cm-quickbar strong {
+  margin-right: 4px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.cm-quickbar button {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: #f8fafc;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.cm-quickbar button:nth-of-type(1) {
+  border-color: #60a5fa;
+  background: #dbeafe;
+}
+
+.cm-quickbar button:nth-of-type(2),
+.cm-quickbar button:nth-of-type(3) {
+  border-color: #f87171;
+  background: #fee2e2;
+}
+
+.cm-quickbar button:nth-of-type(5),
+.cm-quickbar button:nth-of-type(6) {
+  border-color: #111827;
+  background: #f3f4f6;
+}
+
+.milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.document-actions button.active-action {
+  background: #2563eb;
+  color: white;
+}
+
+/* Plein écran de travail : masque les éléments non essentiels. */
+.focus-mode .topbar,
+.focus-mode .sidebar,
+.focus-mode .storage-alert {
+  display: none;
+}
+
+.focus-mode .explorer-layout {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.focus-mode .workspace {
+  padding: 10px;
+}
+
+.focus-mode .document-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(238, 241, 245, .96);
+  backdrop-filter: blur(8px);
+}
+
+.focus-mode .canvas-wrap {
+  max-height: calc(100vh - 190px);
+}
+
+@media (max-width: 700px) {
+  .cm-quickbar {
+    top: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .cm-quickbar strong,
+  .cm-quickbar button {
+    white-space: nowrap;
+  }
+
+  .milestone-badge {
+    display: none;
+  }
+}

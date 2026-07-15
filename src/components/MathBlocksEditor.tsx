@@ -103,6 +103,16 @@ export default function MathBlocksEditor({ blocks, onChange }: Props) {
 
   return (
     <section className="math-blocks-panel">
+      <div className="cm-quickbar" aria-label="Mode cours magistral">
+        <strong>Mode CM</strong>
+        <button onClick={() => addBlock("definition")}>Définition</button>
+        <button onClick={() => addBlock("theoreme")}>Théorème</button>
+        <button onClick={() => addBlock("proposition")}>Proposition</button>
+        <button onClick={() => addBlock("proof")}>Démonstration</button>
+        <button onClick={() => addBlock("exemple")}>Exemple</button>
+        <button onClick={() => addBlock("exercice")}>Exercice</button>
+      </div>
+
       <div className="math-blocks-header">
         <div>
           <h2>Blocs mathématiques</h2>

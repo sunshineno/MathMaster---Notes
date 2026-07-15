@@ -1,28 +1,19 @@
-MATHMASTER NOTES — v0.8.0 IMPORT ET ANNOTATION PDF
+MATHMASTER NOTES — v0.9.0 / MILESTONE 1
 
 Remplace :
 - src/App.tsx
-- src/types.ts
-- src/pdfExport.ts
+- src/components/MathBlocksEditor.tsx
 - src/styles.css
-- src/components/CanvasBoard.tsx
 - package.json
-- package-lock.json
-
-Ajoute :
-- src/pdfImport.ts
-- src/vite-env.d.ts
 
 Nouveautés :
-- import d’un PDF dans le chapitre courant ;
-- création automatique d’une page MathMaster par page PDF ;
-- annotation au stylet sur un calque séparé ;
-- gomme qui retire seulement les annotations ;
-- miniatures des pages PDF ;
-- progression visible pendant l’import ;
-- export PDF avec document original et annotations fusionnés ;
-- export PNG fusionné ;
-- limite de 40 pages par import pour protéger le stockage local.
+- blocs Définition en bleu, texte noir ;
+- blocs Théorème / Proposition en rouge, texte noir ;
+- blocs Exemple / Exercice en noir, texte noir ;
+- barre Mode CM pour créer rapidement les blocs ;
+- modèles de chapitre : cours, TD, annales, recherche ou vide ;
+- recherche dans les matières, chapitres, pages, titres et contenus des blocs ;
+- mode plein écran pour écrire sans distraction.
 
 Commit conseillé :
-Import et annotation PDF v0.8.0
+Milestone 1 - mode CM et couleurs des blocs v0.9.0

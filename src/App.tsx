@@ -18,7 +18,10 @@ import {
   Download,
   Upload,
   ShieldCheck,
-  LoaderCircle
+  LoaderCircle,
+  Maximize2,
+  Minimize2,
+  GraduationCap
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
@@ -48,6 +51,7 @@ export default function App() {
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
 
   useEffect(() => {
     setSaveStatus("saving");
@@ -187,6 +191,65 @@ export default function App() {
     });
   };
 
+  const createTemplateBlocks = (template: string): MathBlock[] => {
+    const make = (
+      type: MathBlock["type"],
+      title: string,
+      content = ""
+    ): MathBlock => ({
+      id: crypto.randomUUID(),
+      type,
+      title,
+      content,
+      collapsed: false
+    });
+
+    switch (template) {
+      case "cours":
+        return [
+          make("definition", "Définition"),
+          make("theoreme", "Théorème"),
+          make("proof", "Démonstration"),
+          make("exemple", "Exemple")
+        ];
+      case "td":
+        return [
+          make("exercice", "Exercice"),
+          make("correction", "Correction")
+        ];
+      case "annales":
+        return [
+          make("text", "Énoncé / informations"),
+          make("exercice", "Question"),
+          make("correction", "Correction")
+        ];
+      case "recherche":
+        return [
+          make("text", "Notes de recherche"),
+          make("proposition", "Proposition"),
+          make("proof", "Démonstration")
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const chooseChapterTemplate = () => {
+    const answer = prompt(
+      "Modèle du chapitre : cours, td, annales, recherche ou vide",
+      "cours"
+    );
+    if (answer === null) return null;
+
+    const normalized = answer.trim().toLowerCase();
+    const accepted = ["cours", "td", "annales", "recherche", "vide"];
+    return accepted.includes(normalized) ? normalized : "vide";
+  };
+
+  const toggleFocusMode = () => {
+    setFocusMode(current => !current);
+  };
+
   const addChapter = (targetSubjectId = subject?.id) => {
     if (!targetSubjectId) return;
 
@@ -195,6 +258,10 @@ export default function App() {
 
     const title = prompt("Nom du chapitre :")?.trim();
     if (!title) return;
+
+    const template = chooseChapterTemplate();
+    if (template === null) return;
+    const templateBlocks = createTemplateBlocks(template);
 
     const chapterId = crypto.randomUUID();
     const pageId = crypto.randomUUID();
@@ -218,7 +285,7 @@ export default function App() {
                       dataUrl: "",
                       paper: "grid",
                       latex: "",
-                      blocks: []
+                      blocks: templateBlocks
                     }
                   ]
                 }
@@ -635,12 +702,23 @@ export default function App() {
     const query = search.trim().toLowerCase();
     if (!query) return state.subjects;
 
+    const chapterMatches = (currentChapter: typeof state.subjects[number]["chapters"][number]) =>
+      currentChapter.title.toLowerCase().includes(query) ||
+      currentChapter.pages.some(currentPage =>
+        currentPage.title.toLowerCase().includes(query) ||
+        currentPage.latex.toLowerCase().includes(query) ||
+        (currentPage.blocks ?? []).some(block =>
+          block.title.toLowerCase().includes(query) ||
+          block.content.toLowerCase().includes(query)
+        )
+      );
+
     return state.subjects
       .map(currentSubject => ({
         ...currentSubject,
         chapters: currentSubject.chapters.filter(currentChapter =>
           currentSubject.title.toLowerCase().includes(query) ||
-          currentChapter.title.toLowerCase().includes(query)
+          chapterMatches(currentChapter)
         )
       }))
       .filter(currentSubject =>
@@ -650,7 +728,7 @@ export default function App() {
   }, [state.subjects, search]);
 
   return (
-    <div className="app">
+    <div className={`app ${focusMode ? "focus-mode" : ""}`}>
       <header className="topbar">
         <div className="brand">
           <BookOpen />
@@ -684,7 +762,7 @@ export default function App() {
             <input
               value={search}
               onChange={event => setSearch(event.target.value)}
-              placeholder="Rechercher une matière ou un chapitre…"
+              placeholder="Rechercher matière, chapitre, page ou contenu…"
             />
           </div>
 
@@ -890,10 +968,20 @@ export default function App() {
                   <h1>{chapter.title}</h1>
                   <p>
                     {subject?.title} · {page.title}
+                    <span className="milestone-badge">
+                      <GraduationCap size={13} /> Mode Master
+                    </span>
                   </p>
                 </div>
 
                 <div className="document-actions">
+                  <button
+                    className={focusMode ? "active-action" : ""}
+                    title={focusMode ? "Quitter le mode plein écran" : "Mode plein écran"}
+                    onClick={toggleFocusMode}
+                  >
+                    {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
                   <button
                     title="Renommer le chapitre"
                     onClick={() =>
