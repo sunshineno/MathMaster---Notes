@@ -1,23 +1,18 @@
-MATHMASTER NOTES — v0.6.0 STABILISATION TABLETTE
+MATHMASTER NOTES — v0.7.0
 
 Remplace :
 - src/App.tsx
-- src/storage.ts
 - src/styles.css
-- src/components/CanvasBoard.tsx
 - package.json
 
+Ajoute :
+- src/pdfExport.ts
+
 Nouveautés :
-- récupération de secours après fermeture brutale ;
-- tentative d'activation du stockage persistant Android ;
-- sauvegarde immédiate quand l'application passe en arrière-plan ;
-- détection des erreurs de quota de stockage ;
-- alerte lorsque le stockage dépasse 80 % ;
-- bouton de sauvegarde immédiate en cas d'alerte ;
-- meilleure compatibilité avec les anciennes pages ;
-- optimisation du mode paysage sur tablette ;
-- barre d'outils fixe pendant l'écriture ;
-- nettoyage fiable des temporisations de sauvegarde.
+- export du chapitre courant en PDF ;
+- dessin manuscrit et blocs intégrés au PDF ;
+- suppression visible des matières et chapitres ;
+- confirmation renforcée en recopiant exactement le nom.
 
 Commit conseillé :
-Stabilisation tablette v0.6.0
+Export PDF et suppression renforcée v0.7.0

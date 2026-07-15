@@ -1077,3 +1077,11 @@ canvas {
     width: 100%;
   }
 }
+
+
+/* v0.7.0 — export PDF et suppression renforcée */
+.panel-title-actions { display:flex; align-items:center; gap:5px; }
+.panel-title button.danger-action, .document-actions button.danger-action { color:#b91c1c; background:#fee2e2; }
+.panel-title button.danger-action:hover, .document-actions button.danger-action:hover { color:white; background:#dc2626; }
+.document-actions button { transition:background-color .15s ease,color .15s ease,transform .15s ease; }
+.document-actions button:hover { transform:translateY(-1px); }

@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileCode2,
+  FileDown,
   FilePlus2,
   Folder,
   FolderOpen,
@@ -31,6 +32,7 @@ import {
 } from "./storage";
 import type { MathBlock, NotebookState, PaperType } from "./types";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
+import { exportChapterToPdf } from "./pdfExport";
 
 export default function App() {
   const [state, setState] = useState<NotebookState>(() => loadState());
@@ -149,10 +151,13 @@ export default function App() {
     const selected = state.subjects.find(item => item.id === subjectId);
     if (!selected) return;
 
-    const confirmed = confirm(
-      `Supprimer la matière « ${selected.title} » et tous ses chapitres ?\n\nCette action est irréversible.`
+    const answer = prompt(
+      `Pour supprimer définitivement la matière « ${selected.title} » et tous ses chapitres, écris exactement son nom :`
     );
-    if (!confirmed) return;
+    if (answer !== selected.title) {
+      if (answer !== null) alert("Le nom saisi ne correspond pas. La matière n’a pas été supprimée.");
+      return;
+    }
 
     update(current => {
       const subjects = current.subjects.filter(item => item.id !== subjectId);
@@ -255,10 +260,13 @@ export default function App() {
     const selectedChapter = selectedSubject?.chapters.find(item => item.id === chapterId);
     if (!selectedChapter) return;
 
-    const confirmed = confirm(
-      `Supprimer le chapitre « ${selectedChapter.title} » et toutes ses pages ?\n\nCette action est irréversible.`
+    const answer = prompt(
+      `Pour supprimer définitivement le chapitre « ${selectedChapter.title} » et toutes ses pages, écris exactement son nom :`
     );
-    if (!confirmed) return;
+    if (answer !== selectedChapter.title) {
+      if (answer !== null) alert("Le nom saisi ne correspond pas. Le chapitre n’a pas été supprimé.");
+      return;
+    }
 
     update(current => {
       const updatedSubjects = current.subjects.map(item => {
@@ -464,6 +472,12 @@ export default function App() {
     updatePage({
       latex: `${page.latex}${page.latex ? "\n\n" : ""}${block}`
     });
+  };
+
+  const exportChapterPdf = async () => {
+    if (!subject || !chapter) return;
+    try { await exportChapterToPdf(subject, chapter); }
+    catch (error) { alert(error instanceof Error ? `Impossible de créer le PDF : ${error.message}` : "Impossible de créer le PDF."); }
   };
 
   const exportChapterTex = () => {
@@ -685,9 +699,16 @@ export default function App() {
         <aside className="sidebar explorer">
           <div className="panel-title">
             <span>Mes cours</span>
-            <button title="Ajouter une matière" onClick={addSubject}>
-              <FolderPlus size={18} />
-            </button>
+            <div className="panel-title-actions">
+              {subject && (
+                <button className="danger-action" title="Supprimer la matière sélectionnée" onClick={() => deleteSubject(subject.id)}>
+                  <Trash2 size={18} />
+                </button>
+              )}
+              <button title="Ajouter une matière" onClick={addSubject}>
+                <FolderPlus size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="tree">
@@ -827,11 +848,17 @@ export default function App() {
                   >
                     <Pencil size={18} />
                   </button>
+                  <button title="Exporter le chapitre en PDF" onClick={exportChapterPdf}>
+                    <FileDown size={18} />
+                  </button>
                   <button
                     title="Exporter le chapitre en LaTeX"
                     onClick={exportChapterTex}
                   >
                     <FileCode2 size={18} />
+                  </button>
+                  <button className="danger-action" title="Supprimer ce chapitre" onClick={() => subject && deleteChapter(subject.id, chapter.id)}>
+                    <Trash2 size={18} />
                   </button>
                   <button title="Ajouter aux favoris" onClick={toggleFavorite}>
                     <Star
