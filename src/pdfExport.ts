@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import type { Chapter, Subject } from "./types";
+import type { Chapter, NotePage, Subject } from "./types";
 
 function safeFileName(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -10,6 +10,35 @@ function addWrappedText(pdf: jsPDF, text: string, x: number, y: number, maxWidth
   const lines = pdf.splitTextToSize(text, maxWidth);
   pdf.text(lines, x, y);
   return y + lines.length * 4.5;
+}
+
+function loadImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Une image de page est illisible."));
+    image.src = source;
+  });
+}
+
+async function getMergedPageImage(page: NotePage) {
+  if (!page.backgroundDataUrl) return page.dataUrl;
+
+  const background = await loadImage(page.backgroundDataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = background.naturalWidth || 1400;
+  canvas.height = background.naturalHeight || 2400;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Impossible de composer la page PDF.");
+
+  context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+  if (page.dataUrl) {
+    const annotations = await loadImage(page.dataUrl);
+    context.drawImage(annotations, 0, 0, canvas.width, canvas.height);
+  }
+
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 export async function exportChapterToPdf(subject: Subject, chapter: Chapter) {
@@ -25,12 +54,13 @@ export async function exportChapterToPdf(subject: Subject, chapter: Chapter) {
     pdf.text(`${subject.title} — ${notePage.title}`, margin, 22); pdf.setTextColor(0);
     let y = 28;
 
-    if (notePage.dataUrl) {
-      const props = pdf.getImageProperties(notePage.dataUrl);
-      const maxWidth = pageWidth - margin * 2, maxHeight = 185;
+    const pageImage = await getMergedPageImage(notePage);
+    if (pageImage) {
+      const props = pdf.getImageProperties(pageImage);
+      const maxWidth = pageWidth - margin * 2, maxHeight = 230;
       let width = maxWidth, height = width / (props.width / props.height);
       if (height > maxHeight) { height = maxHeight; width = height * (props.width / props.height); }
-      pdf.addImage(notePage.dataUrl, "PNG", (pageWidth-width)/2, y, width, height, undefined, "FAST");
+      pdf.addImage(pageImage, pageImage.startsWith("data:image/jpeg") ? "JPEG" : "PNG", (pageWidth-width)/2, y, width, height, undefined, "FAST");
       y += height + 8;
     }
 

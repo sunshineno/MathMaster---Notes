@@ -29,6 +29,9 @@ export interface NotePage {
   paper: PaperType;
   latex: string;
   blocks?: MathBlock[];
+  backgroundDataUrl?: string;
+  sourcePdfName?: string;
+  sourcePdfPage?: number;
 }
 
 export interface Chapter {

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FileCode2,
   FileDown,
+  FileInput,
   FilePlus2,
   Folder,
   FolderOpen,
@@ -16,7 +17,8 @@ import {
   Trash2,
   Download,
   Upload,
-  ShieldCheck
+  ShieldCheck,
+  LoaderCircle
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
@@ -33,6 +35,7 @@ import {
 import type { MathBlock, NotebookState, PaperType } from "./types";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 import { exportChapterToPdf } from "./pdfExport";
+import { importPdfAsPages } from "./pdfImport";
 
 export default function App() {
   const [state, setState] = useState<NotebookState>(() => loadState());
@@ -44,6 +47,7 @@ export default function App() {
   const [saveError, setSaveError] = useState("");
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [persistentStorage, setPersistentStorage] = useState(false);
+  const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
 
   useEffect(() => {
     setSaveStatus("saving");
@@ -291,6 +295,43 @@ export default function App() {
         selectedPageId: nextChapter?.pages[0]?.id ?? null
       };
     });
+  };
+
+  const importPdf = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !subject || !chapter) return;
+
+    try {
+      setPdfImportProgress({ current: 0, total: 1 });
+      const importedPages = await importPdfAsPages(file, setPdfImportProgress);
+      if (importedPages.length === 0) return;
+
+      update(current => ({
+        ...current,
+        subjects: current.subjects.map(currentSubject =>
+          currentSubject.id === subject.id
+            ? {
+                ...currentSubject,
+                chapters: currentSubject.chapters.map(currentChapter =>
+                  currentChapter.id === chapter.id
+                    ? { ...currentChapter, pages: [...currentChapter.pages, ...importedPages] }
+                    : currentChapter
+                )
+              }
+            : currentSubject
+        ),
+        selectedPageId: importedPages[0].id
+      }));
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? `Impossible d’importer le PDF : ${error.message}`
+          : "Impossible d’importer le PDF."
+      );
+    } finally {
+      setPdfImportProgress(null);
+    }
   };
 
   const addPage = () => {
@@ -695,6 +736,19 @@ export default function App() {
         </div>
       )}
 
+      {pdfImportProgress && (
+        <div className="pdf-import-overlay" role="status">
+          <div className="pdf-import-card">
+            <LoaderCircle className="spin" size={30} />
+            <strong>Import du PDF</strong>
+            <span>
+              Page {pdfImportProgress.current} sur {pdfImportProgress.total}
+            </span>
+            <progress value={pdfImportProgress.current} max={pdfImportProgress.total} />
+          </div>
+        </div>
+      )}
+
       <div className="layout explorer-layout">
         <aside className="sidebar explorer">
           <div className="panel-title">
@@ -848,6 +902,10 @@ export default function App() {
                   >
                     <Pencil size={18} />
                   </button>
+                  <label className="document-file-button" title="Importer un PDF dans ce chapitre">
+                    <FileInput size={18} />
+                    <input type="file" accept="application/pdf,.pdf" onChange={importPdf} />
+                  </label>
                   <button title="Exporter le chapitre en PDF" onClick={exportChapterPdf}>
                     <FileDown size={18} />
                   </button>
@@ -898,7 +956,14 @@ export default function App() {
                       }
                       onDoubleClick={() => renamePage(currentPage.id)}
                     >
-                      {currentPage.title}
+                      {currentPage.backgroundDataUrl && (
+                        <img
+                          className="page-tab-thumbnail"
+                          src={currentPage.backgroundDataUrl}
+                          alt=""
+                        />
+                      )}
+                      <span>{currentPage.title}</span>
                     </button>
                     <button
                       className="page-tab-delete"
@@ -918,6 +983,7 @@ export default function App() {
 
               <CanvasBoard
                 dataUrl={page.dataUrl}
+                backgroundDataUrl={page.backgroundDataUrl}
                 paper={page.paper}
                 onSave={dataUrl => updatePage({ dataUrl })}
               />

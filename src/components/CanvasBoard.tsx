@@ -24,6 +24,7 @@ import type { PaperType } from "../types";
 
 interface Props {
   dataUrl: string;
+  backgroundDataUrl?: string;
   paper: PaperType;
   onSave: (dataUrl: string) => void;
 }
@@ -61,7 +62,7 @@ interface TouchPoint {
 const CANVAS_WIDTH = 1400;
 const CANVAS_HEIGHT = 2400;
 
-export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
+export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const drawing = useRef(false);
@@ -159,6 +160,11 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     const right = Math.min(CANVAS_WIDTH, Math.ceil(rect.x + rect.width));
     const bottom = Math.min(CANVAS_HEIGHT, Math.ceil(rect.y + rect.height));
 
+    if (backgroundDataUrl) {
+      ctx.clearRect(x, y, right - x, bottom - y);
+      return;
+    }
+
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, right - x, bottom - y);
@@ -212,7 +218,10 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    drawPaper(ctx, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!backgroundDataUrl) {
+      drawPaper(ctx, canvas.width, canvas.height);
+    }
     if (!url) return;
 
     const image = new Image();
@@ -235,7 +244,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     setHistory([]);
     setFuture([]);
     setSelection(null);
-  }, [dataUrl, paper]);
+  }, [dataUrl, backgroundDataUrl, paper]);
 
   const eventPoint = (event: React.PointerEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current!;
@@ -276,7 +285,7 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     ctx.lineJoin = "round";
 
     if (tool === "eraser") {
-      ctx.globalCompositeOperation = "source-over";
+      ctx.globalCompositeOperation = backgroundDataUrl ? "destination-out" : "source-over";
       ctx.globalAlpha = 1;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = Math.max(16, width * 3.5);
@@ -723,12 +732,32 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
     dirtyRef.current = false;
   };
 
-  const download = () => {
+  const download = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    let href = canvas.toDataURL("image/png");
+    if (backgroundDataUrl) {
+      const merged = document.createElement("canvas");
+      merged.width = canvas.width;
+      merged.height = canvas.height;
+      const mergedContext = merged.getContext("2d");
+      if (mergedContext) {
+        const background = new Image();
+        await new Promise<void>((resolve, reject) => {
+          background.onload = () => resolve();
+          background.onerror = () => reject(new Error("Fond PDF illisible"));
+          background.src = backgroundDataUrl;
+        });
+        mergedContext.drawImage(background, 0, 0, merged.width, merged.height);
+        mergedContext.drawImage(canvas, 0, 0);
+        href = merged.toDataURL("image/png");
+      }
+    }
+
     const link = document.createElement("a");
     link.download = "mathmaster-note.png";
-    link.href = canvas.toDataURL("image/png");
+    link.href = href;
     link.click();
   };
 
@@ -858,7 +887,15 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
       </p>
 
       <div className="canvas-wrap canvas-wrap-long" ref={wrapRef} onWheel={handleWheel}>
-        <div className="canvas-stage" style={{ width: `${CANVAS_WIDTH * zoom}px`, height: `${CANVAS_HEIGHT * zoom}px` }}>
+        <div className={`canvas-stage ${backgroundDataUrl ? "pdf-canvas-stage" : ""}`} style={{ width: `${CANVAS_WIDTH * zoom}px`, height: `${CANVAS_HEIGHT * zoom}px` }}>
+          {backgroundDataUrl && (
+            <img
+              className="pdf-page-background"
+              src={backgroundDataUrl}
+              alt="Page PDF importée"
+              draggable={false}
+            />
+          )}
           <canvas
             ref={canvasRef}
             style={{

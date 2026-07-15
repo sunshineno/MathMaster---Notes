@@ -1,18 +1,28 @@
-MATHMASTER NOTES — v0.7.0
+MATHMASTER NOTES — v0.8.0 IMPORT ET ANNOTATION PDF
 
 Remplace :
 - src/App.tsx
+- src/types.ts
+- src/pdfExport.ts
 - src/styles.css
+- src/components/CanvasBoard.tsx
 - package.json
+- package-lock.json
 
 Ajoute :
-- src/pdfExport.ts
+- src/pdfImport.ts
+- src/vite-env.d.ts
 
 Nouveautés :
-- export du chapitre courant en PDF ;
-- dessin manuscrit et blocs intégrés au PDF ;
-- suppression visible des matières et chapitres ;
-- confirmation renforcée en recopiant exactement le nom.
+- import d’un PDF dans le chapitre courant ;
+- création automatique d’une page MathMaster par page PDF ;
+- annotation au stylet sur un calque séparé ;
+- gomme qui retire seulement les annotations ;
+- miniatures des pages PDF ;
+- progression visible pendant l’import ;
+- export PDF avec document original et annotations fusionnés ;
+- export PNG fusionné ;
+- limite de 40 pages par import pour protéger le stockage local.
 
 Commit conseillé :
-Export PDF et suppression renforcée v0.7.0
+Import et annotation PDF v0.8.0
