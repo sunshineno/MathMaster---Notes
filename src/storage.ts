@@ -1,6 +1,7 @@
 import type { NotebookState } from "./types";
 
 const STORAGE_KEY = "mathmaster-notes-v2";
+const RECOVERY_KEY = "mathmaster-notes-recovery-v1";
 
 export const initialState: NotebookState = {
   subjects: [
@@ -18,7 +19,8 @@ export const initialState: NotebookState = {
               title: "Page 1",
               dataUrl: "",
               paper: "grid",
-              latex: ""
+              latex: "",
+              blocks: []
             }
           ]
         }
@@ -37,17 +39,93 @@ export interface NotebookBackup {
   state: NotebookState;
 }
 
+export interface StorageInfo {
+  usedBytes: number;
+  quotaBytes: number;
+  usageRatio: number;
+}
+
+function normalizeState(state: NotebookState): NotebookState {
+  return {
+    ...state,
+    subjects: state.subjects.map(subject => ({
+      ...subject,
+      chapters: subject.chapters.map(chapter => ({
+        ...chapter,
+        pages: chapter.pages.map(page => ({
+          ...page,
+          blocks: page.blocks ?? []
+        }))
+      }))
+    }))
+  };
+}
+
 export function loadState(): NotebookState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : initialState;
+    if (saved) return normalizeState(JSON.parse(saved));
+
+    const recovery = localStorage.getItem(RECOVERY_KEY);
+    if (recovery) return normalizeState(JSON.parse(recovery));
+
+    return initialState;
   } catch {
     return initialState;
   }
 }
 
 export function saveState(state: NotebookState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const content = JSON.stringify(normalizeState(state));
+
+  try {
+    localStorage.setItem(RECOVERY_KEY, content);
+    localStorage.setItem(STORAGE_KEY, content);
+  } catch (error) {
+    if (
+      error instanceof DOMException &&
+      (error.name === "QuotaExceededError" ||
+        error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+    ) {
+      throw new Error(
+        "L’espace de stockage local est presque plein. Télécharge une sauvegarde puis supprime quelques pages volumineuses."
+      );
+    }
+
+    throw error;
+  }
+}
+
+export function clearRecoverySnapshot() {
+  localStorage.removeItem(RECOVERY_KEY);
+}
+
+export async function requestPersistentStorage(): Promise<boolean> {
+  if (!navigator.storage?.persist) return false;
+
+  try {
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
+export async function getStorageInfo(): Promise<StorageInfo | null> {
+  if (!navigator.storage?.estimate) return null;
+
+  try {
+    const estimate = await navigator.storage.estimate();
+    const usedBytes = estimate.usage ?? 0;
+    const quotaBytes = estimate.quota ?? 0;
+
+    return {
+      usedBytes,
+      quotaBytes,
+      usageRatio: quotaBytes > 0 ? usedBytes / quotaBytes : 0
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function createBackup(state: NotebookState): NotebookBackup {
@@ -55,7 +133,7 @@ export function createBackup(state: NotebookState): NotebookBackup {
     format: "mathmaster-notes-backup",
     version: 1,
     exportedAt: new Date().toISOString(),
-    state
+    state: normalizeState(state)
   };
 }
 
@@ -68,10 +146,10 @@ export function parseBackup(content: string): NotebookState {
     !parsed.state ||
     !Array.isArray(parsed.state.subjects)
   ) {
-    throw new Error("Ce fichier n'est pas une sauvegarde MathMaster Notes valide.");
+    throw new Error("Ce fichier n’est pas une sauvegarde MathMaster Notes valide.");
   }
 
-  return parsed.state;
+  return normalizeState(parsed.state);
 }
 
 export function downloadBackup(state: NotebookState) {

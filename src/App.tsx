@@ -20,10 +20,14 @@ import {
 import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
 import {
+  clearRecoverySnapshot,
   downloadBackup,
+  getStorageInfo,
   loadState,
   parseBackup,
-  saveState
+  requestPersistentStorage,
+  saveState,
+  type StorageInfo
 } from "./storage";
 import type { MathBlock, NotebookState, PaperType } from "./types";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
@@ -34,14 +38,29 @@ export default function App() {
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving">("saved");
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
+  const [saveError, setSaveError] = useState("");
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
+  const [persistentStorage, setPersistentStorage] = useState(false);
 
   useEffect(() => {
     setSaveStatus("saving");
-    const timer = window.setTimeout(() => {
-      saveState(state);
-      setSaveStatus("saved");
-    }, 250);
+    setSaveError("");
+
+    const timer = window.setTimeout(async () => {
+      try {
+        saveState(state);
+        setSaveStatus("saved");
+        setStorageInfo(await getStorageInfo());
+      } catch (error) {
+        setSaveStatus("error");
+        setSaveError(
+          error instanceof Error
+            ? error.message
+            : "La sauvegarde automatique a échoué."
+        );
+      }
+    }, 300);
 
     return () => window.clearTimeout(timer);
   }, [state]);
@@ -481,6 +500,39 @@ export default function App() {
     };
   }, []);
 
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeStorage = async () => {
+      const persisted = await requestPersistentStorage();
+      const info = await getStorageInfo();
+
+      if (!mounted) return;
+      setPersistentStorage(persisted);
+      setStorageInfo(info);
+    };
+
+    initializeStorage();
+
+    const saveBeforeLeaving = () => {
+      try {
+        saveState(state);
+      } catch {
+        // La sauvegarde différée affichera l'erreur dans l'interface.
+      }
+    };
+
+    window.addEventListener("pagehide", saveBeforeLeaving);
+    document.addEventListener("visibilitychange", saveBeforeLeaving);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("pagehide", saveBeforeLeaving);
+      document.removeEventListener("visibilitychange", saveBeforeLeaving);
+    };
+  }, [state]);
+
   const installApp = async () => {
     if (!installPrompt) return;
     await installPrompt.prompt();
@@ -511,6 +563,9 @@ export default function App() {
 
       setState(restoredState);
       saveState(restoredState);
+      clearRecoverySnapshot();
+      setSaveStatus("saved");
+      setSaveError("");
       alert("La sauvegarde a été restaurée avec succès.");
     } catch (error) {
       const message =
@@ -551,9 +606,22 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          <div className="save-indicator" title="État de la sauvegarde locale">
+          <div
+            className={`save-indicator save-${saveStatus}`}
+            title={
+              saveStatus === "error"
+                ? saveError
+                : persistentStorage
+                  ? "Stockage persistant activé"
+                  : "Sauvegarde locale active"
+            }
+          >
             <ShieldCheck size={17} />
-            {saveStatus === "saving" ? "Sauvegarde…" : "Enregistré"}
+            {saveStatus === "saving"
+              ? "Sauvegarde…"
+              : saveStatus === "error"
+                ? "Erreur de sauvegarde"
+                : "Enregistré"}
           </div>
 
           <div className="search">
@@ -595,6 +663,23 @@ export default function App() {
           )}
         </div>
       </header>
+
+      {(saveStatus === "error" ||
+        (storageInfo && storageInfo.usageRatio > 0.8)) && (
+        <div className={`storage-alert ${saveStatus === "error" ? "danger" : ""}`}>
+          <strong>
+            {saveStatus === "error"
+              ? "Problème de sauvegarde"
+              : "Stockage presque plein"}
+          </strong>
+          <span>
+            {saveStatus === "error"
+              ? saveError
+              : `${Math.round(storageInfo!.usageRatio * 100)} % de l’espace disponible est utilisé. Télécharge une sauvegarde complète.`}
+          </span>
+          <button onClick={exportNotebookBackup}>Télécharger une sauvegarde</button>
+        </div>
+      )}
 
       <div className="layout explorer-layout">
         <aside className="sidebar explorer">

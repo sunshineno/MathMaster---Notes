@@ -995,3 +995,85 @@ canvas {
     flex-basis: 100%;
   }
 }
+
+
+/* v0.6.0 — stabilisation tablette */
+.save-indicator.save-error {
+  color: #fecaca;
+}
+
+.storage-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+}
+
+.storage-alert.danger {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.storage-alert span {
+  flex: 1;
+}
+
+.storage-alert button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: currentColor;
+  color: white;
+  font-weight: 700;
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .topbar {
+    min-height: 58px;
+  }
+
+  .explorer-layout {
+    grid-template-columns: 285px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding-top: 10px;
+  }
+
+  .workspace {
+    padding: 12px;
+  }
+
+  .canvas-wrap {
+    max-height: calc(100vh - 250px);
+  }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 7px;
+    border-radius: 10px;
+    background: rgba(248, 250, 252, .96);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@media (max-width: 700px) {
+  .storage-alert {
+    align-items: stretch;
+    flex-direction: column;
+    margin-inline: 8px;
+  }
+
+  .storage-alert button {
+    width: 100%;
+  }
+}

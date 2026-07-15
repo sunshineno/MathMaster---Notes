@@ -70,6 +70,8 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   const shapeSnapshot = useRef<ImageData | null>(null);
   const panStart = useRef({ x: 0, y: 0, left: 0, top: 0 });
   const autosaveTimer = useRef<number | null>(null);
+  const onSaveRef = useRef(onSave);
+  const dirtyRef = useRef(false);
   const activeTouches = useRef<Map<number, TouchPoint>>(new Map());
   const pinchStart = useRef({
     distance: 0,
@@ -566,9 +568,12 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
   const scheduleAutosave = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    dirtyRef.current = true;
     if (autosaveTimer.current !== null) window.clearTimeout(autosaveTimer.current);
     autosaveTimer.current = window.setTimeout(() => {
-      onSave(canvas.toDataURL("image/png"));
+      onSaveRef.current(canvas.toDataURL("image/png"));
+      dirtyRef.current = false;
       autosaveTimer.current = null;
     }, 700);
   };
@@ -712,7 +717,10 @@ export default function CanvasBoard({ dataUrl, paper, onSave }: Props) {
 
   const save = () => {
     const canvas = canvasRef.current;
-    if (canvas) onSave(canvas.toDataURL("image/png"));
+    if (!canvas) return;
+
+    onSaveRef.current(canvas.toDataURL("image/png"));
+    dirtyRef.current = false;
   };
 
   const download = () => {
