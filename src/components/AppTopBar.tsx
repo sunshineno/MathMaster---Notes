@@ -1,5 +1,7 @@
-import { BookOpen, Download, Search, ShieldCheck, Upload } from "lucide-react";
-import type { ChangeEvent } from "react";
+import { BookOpen, Download, Info, Search, ShieldCheck, Upload } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
+import AboutDialog from "./AboutDialog";
+import { APP_VERSION } from "../version";
 
 export type SaveStatus = "saved" | "saving" | "error";
 
@@ -26,6 +28,8 @@ export default function AppTopBar({
   canInstall,
   onInstall
 }: AppTopBarProps) {
+  const [aboutOpen, setAboutOpen] = useState(false);
+
   const saveTitle =
     saveStatus === "error"
       ? saveError
@@ -47,6 +51,13 @@ export default function AppTopBar({
         <div>
           <strong>MathMaster Notes</strong>
           <span>Cahier numérique de mathématiques</span>
+          <button
+            className="app-version-badge"
+            onClick={() => setAboutOpen(true)}
+            title="Afficher les informations de version"
+          >
+            v{APP_VERSION}
+          </button>
         </div>
       </div>
 
@@ -90,6 +101,15 @@ export default function AppTopBar({
           />
         </label>
 
+        <button
+          className="about-button"
+          onClick={() => setAboutOpen(true)}
+          title="À propos de MathMaster Notes"
+        >
+          <Info size={18} />
+          À propos
+        </button>
+
         {canInstall && (
           <button className="install-button" onClick={onInstall}>
             <Download size={18} />
@@ -97,6 +117,8 @@ export default function AppTopBar({
           </button>
         )}
       </div>
+
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </header>
   );
 }

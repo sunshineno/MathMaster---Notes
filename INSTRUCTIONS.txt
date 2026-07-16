@@ -1,23 +1,12 @@
-MATHMASTER NOTES — v1.4.1 ERGONOMIE TABLETTE
+MATHMASTER NOTES — v1.5.0
 
-Remplace :
-- src/components/PageNavigator.tsx
-- src/styles.css
-- package.json
-- package-lock.json
+Copie les fichiers dans le dossier principal du projet.
 
-Nouveautés :
-- gestionnaire de pages repliable ;
-- état replié mémorisé ;
-- boutons Afficher / Réduire ;
-- interface paysage plus compacte ;
-- davantage de hauteur disponible pour écrire ;
-- barres et cartes légèrement réduites sans perdre l’accessibilité.
+IMPORTANT : ne remplace pas ton package-lock.json. Garde celui généré sur ton PC.
 
-Après copie :
-npm install
+Après la copie :
 npm run build
 npm run dev
 
 Commit conseillé :
-Ergonomie tablette et pages repliables v1.4.1
+Version visible et documentation v1.5.0
