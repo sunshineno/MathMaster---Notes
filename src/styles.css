@@ -1894,3 +1894,95 @@ canvas {
   .about-version-card { align-items: flex-start; flex-direction: column; }
   .about-version-card span { text-align: left; }
 }
+
+
+/* v1.6.0 — blocs mathématiques finalisés */
+.math-blocks-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.math-blocks-summary h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.math-blocks-summary span {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.math-blocks-collapse-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+}
+
+.math-blocks-collapse-button:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.math-blocks-panel.is-collapsed {
+  padding-block: 12px;
+}
+
+.math-blocks-panel.is-collapsed .math-blocks-summary {
+  margin-bottom: 0;
+}
+
+.math-blocks-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 520px;
+  color: #475569;
+}
+
+.math-blocks-explanation p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.math-block-number {
+  display: inline-grid;
+  min-width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.math-block-definition .math-block-number { color: #1d4ed8; }
+.math-block-theoreme .math-block-number,
+.math-block-proposition .math-block-number,
+.math-block-lemme .math-block-number,
+.math-block-corollaire .math-block-number { color: #b91c1c; }
+.math-block-exemple .math-block-number,
+.math-block-exercice .math-block-number { color: #111827; }
+
+@media (max-width: 700px) {
+  .math-blocks-summary {
+    align-items: flex-start;
+  }
+
+  .math-blocks-collapse-button {
+    padding-inline: 8px;
+  }
+}

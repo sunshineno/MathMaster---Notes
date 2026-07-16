@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
   ChevronRight,
   Copy,
+  ListOrdered,
   Plus,
   Trash2
 } from "lucide-react";
@@ -44,6 +46,25 @@ const BLOCK_PLACEHOLDERS: Record<MathBlockType, string> = {
   equation: "\\[\n  \n\\]"
 };
 
+const NUMBERED_TYPES = new Set<MathBlockType>([
+  "definition",
+  "theoreme",
+  "proposition",
+  "lemme",
+  "corollaire",
+  "exemple",
+  "exercice"
+]);
+
+function blockDisplayNumber(blocks: MathBlock[], currentIndex: number) {
+  const current = blocks[currentIndex];
+  if (!NUMBERED_TYPES.has(current.type)) return null;
+
+  return blocks
+    .slice(0, currentIndex + 1)
+    .filter(block => block.type === current.type).length;
+}
+
 function createBlock(type: MathBlockType): MathBlock {
   return {
     id: crypto.randomUUID(),
@@ -55,6 +76,21 @@ function createBlock(type: MathBlockType): MathBlock {
 }
 
 export default function MathBlocksEditor({ blocks, onChange }: Props) {
+  const [panelCollapsed, setPanelCollapsed] = useState(() =>
+    localStorage.getItem("mathmaster-math-blocks-collapsed") === "true"
+  );
+  const numberedBlockCount = useMemo(
+    () => blocks.filter(block => NUMBERED_TYPES.has(block.type)).length,
+    [blocks]
+  );
+
+  useEffect(() => {
+    localStorage.setItem(
+      "mathmaster-math-blocks-collapsed",
+      String(panelCollapsed)
+    );
+  }, [panelCollapsed]);
+
   const addBlock = (type: MathBlockType) => {
     onChange([...blocks, createBlock(type)]);
   };
@@ -102,7 +138,26 @@ export default function MathBlocksEditor({ blocks, onChange }: Props) {
   };
 
   return (
-    <section className="math-blocks-panel">
+    <section className={`math-blocks-panel ${panelCollapsed ? "is-collapsed" : ""}`}>
+      <div className="math-blocks-summary">
+        <div>
+          <h2>Blocs mathématiques</h2>
+          <span>
+            {blocks.length} bloc{blocks.length > 1 ? "s" : ""}
+            {numberedBlockCount > 0 && ` · ${numberedBlockCount} numéroté${numberedBlockCount > 1 ? "s" : ""}`}
+          </span>
+        </div>
+        <button
+          className="math-blocks-collapse-button"
+          onClick={() => setPanelCollapsed(current => !current)}
+          title={panelCollapsed ? "Afficher les blocs" : "Réduire les blocs"}
+        >
+          {panelCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+          {panelCollapsed ? "Afficher" : "Réduire"}
+        </button>
+      </div>
+
+      {!panelCollapsed && <>
       <div className="cm-quickbar" aria-label="Mode cours magistral">
         <strong>Mode CM</strong>
         <button onClick={() => addBlock("definition")}>Définition</button>
@@ -114,11 +169,11 @@ export default function MathBlocksEditor({ blocks, onChange }: Props) {
       </div>
 
       <div className="math-blocks-header">
-        <div>
-          <h2>Blocs mathématiques</h2>
+        <div className="math-blocks-explanation">
+          <ListOrdered size={18} />
           <p>
-            Structure ton cours. Chaque bloc sera converti automatiquement en
-            environnement LaTeX.
+            Les définitions, théorèmes, propositions, lemmes, corollaires,
+            exemples et exercices sont numérotés automatiquement sur la page.
           </p>
         </div>
 
@@ -162,6 +217,12 @@ export default function MathBlocksEditor({ blocks, onChange }: Props) {
                     <ChevronDown size={18} />
                   )}
                 </button>
+
+                {blockDisplayNumber(blocks, index) !== null && (
+                  <span className="math-block-number" title="Numérotation automatique">
+                    {blockDisplayNumber(blocks, index)}
+                  </span>
+                )}
 
                 <select
                   value={block.type}
@@ -232,6 +293,7 @@ export default function MathBlocksEditor({ blocks, onChange }: Props) {
           ))}
         </div>
       )}
+      </>}
     </section>
   );
 }

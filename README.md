@@ -1,12 +1,12 @@
 # MathMaster Notes
 
-**Version actuelle : 1.5.0**
+**Version actuelle : 1.6.0**
 
 MathMaster Notes est une application web installable de prise de notes manuscrites, pensée pour les étudiants en mathématiques utilisant une tablette et un stylet.
 
 ## État du projet
 
-La version 1.5.0 constitue la base stable avant les tests de sortie sur tablette. Le numéro de version et la date exacte de compilation sont visibles directement dans l’application via le bouton **À propos**.
+La version 1.6.0 constitue la base stable avant les tests de sortie sur tablette. Le numéro de version et la date exacte de compilation sont visibles directement dans l’application via le bouton **À propos**.
 
 ## Fonctions disponibles
 

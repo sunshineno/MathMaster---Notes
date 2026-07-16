@@ -1,5 +1,13 @@
 # Historique des versions
 
+## 1.6.0 — Blocs mathématiques finalisés
+
+- panneau de blocs repliable avec état mémorisé ;
+- compteur de blocs visible ;
+- numérotation automatique par type sur chaque page ;
+- rappel clair des types numérotés ;
+- couleurs conservées : définitions bleues, théorèmes/propositions rouges, exemples/exercices noirs.
+
 ## 1.5.0 — Version visible et documentation
 
 - ajout du numéro de version dans la barre supérieure ;

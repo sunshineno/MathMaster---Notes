@@ -1,12 +1,17 @@
-MATHMASTER NOTES — v1.5.0
+MATHMASTER NOTES — v1.6.0 BLOCS MATHÉMATIQUES
 
-Copie les fichiers dans le dossier principal du projet.
+Remplace :
+- src/components/MathBlocksEditor.tsx
+- src/styles.css
+- package.json
+- README.md
+- CHANGELOG.md
 
-IMPORTANT : ne remplace pas ton package-lock.json. Garde celui généré sur ton PC.
+Ne remplace pas package-lock.json.
 
-Après la copie :
+Après copie :
 npm run build
 npm run dev
 
 Commit conseillé :
-Version visible et documentation v1.5.0
+Blocs mathématiques numérotés v1.6.0
