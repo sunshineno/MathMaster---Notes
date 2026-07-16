@@ -1,4 +1,4 @@
-import { Copy, FilePlus2, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, FilePlus2, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { NotePage } from "../types";
 
@@ -25,21 +25,36 @@ export default function PageNavigator({
 }: PageNavigatorProps) {
   const [draggedPageId, setDraggedPageId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("mathmaster-pages-collapsed") === "true");
+
+  const toggleCollapsed = () => {
+    setCollapsed(current => {
+      const next = !current;
+      localStorage.setItem("mathmaster-pages-collapsed", String(next));
+      return next;
+    });
+  };
 
   return (
-    <section className="page-manager" aria-label="Gestionnaire de pages">
+    <section className={`page-manager ${collapsed ? "collapsed" : ""}`} aria-label="Gestionnaire de pages">
       <div className="page-manager-header">
         <div>
           <strong>Pages</strong>
           <span>{pages.length} page{pages.length > 1 ? "s" : ""}</span>
         </div>
-        <button onClick={onAdd} title="Ajouter une page">
-          <FilePlus2 size={17} />
-          Nouvelle page
-        </button>
+        <div className="page-manager-header-actions">
+          <button className="page-collapse-button" onClick={toggleCollapsed} title={collapsed ? "Afficher les pages" : "Réduire les pages"}>
+            {collapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
+            {collapsed ? "Afficher" : "Réduire"}
+          </button>
+          <button onClick={onAdd} title="Ajouter une page">
+            <FilePlus2 size={17} />
+            Nouvelle page
+          </button>
+        </div>
       </div>
 
-      <div className="page-cards">
+      {!collapsed && <div className="page-cards">
         {pages.map((page, index) => {
           const selected = page.id === selectedPageId;
           const thumbnail = page.dataUrl || page.backgroundDataUrl;
@@ -132,7 +147,7 @@ export default function PageNavigator({
             </article>
           );
         })}
-      </div>
+      </div>}
     </section>
   );
 }

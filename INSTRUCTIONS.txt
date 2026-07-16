@@ -1,21 +1,23 @@
-MATHMASTER NOTES — v1.2.0 BARRE D’OUTILS RAPIDE
+MATHMASTER NOTES — v1.4.1 ERGONOMIE TABLETTE
 
 Remplace :
-- src/components/CanvasBoard.tsx
+- src/components/PageNavigator.tsx
 - src/styles.css
 - package.json
+- package-lock.json
 
 Nouveautés :
-- stylos rapides noir, bleu, rouge et vert ;
-- épaisseurs rapides 2, 4 et 7 ;
-- mémorisation automatique du stylo, de la couleur, de l’épaisseur,
-  du zoom, du mode d’entrée et du rejet de paume ;
-- mode compact pour masquer les outils avancés pendant un cours ;
-- raccourcis P, H, E, S, Espace, Ctrl+Z et Ctrl+Y.
+- gestionnaire de pages repliable ;
+- état replié mémorisé ;
+- boutons Afficher / Réduire ;
+- interface paysage plus compacte ;
+- davantage de hauteur disponible pour écrire ;
+- barres et cartes légèrement réduites sans perdre l’accessibilité.
 
 Après copie :
+npm install
 npm run build
 npm run dev
 
 Commit conseillé :
-Barre d’outils rapide et réglages persistants v1.2.0
+Ergonomie tablette et pages repliables v1.4.1

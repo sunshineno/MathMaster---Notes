@@ -1661,3 +1661,103 @@ canvas {
   .page-card { min-width: 170px; }
   .page-card-actions { opacity: 1; }
 }
+
+
+/* v1.4.1 — ergonomie tablette et espace d’écriture */
+.page-manager {
+  transition: padding .18s ease, min-height .18s ease;
+}
+
+.page-manager.collapsed {
+  padding-block: 9px;
+}
+
+.page-manager-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.page-manager-header .page-collapse-button {
+  border-color: transparent;
+  background: #eef2f7;
+  color: #475569;
+}
+
+.page-manager.collapsed .page-manager-header {
+  margin-bottom: 0;
+}
+
+.page-manager.collapsed .page-manager-header > div:first-child {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.canvas-section > .input-mode-bar,
+.canvas-section > .drawing-quickbar,
+.canvas-section > .toolbar {
+  scroll-margin-top: 8px;
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .page-manager {
+    padding: 10px 12px;
+  }
+
+  .page-manager-header {
+    margin-bottom: 8px;
+  }
+
+  .page-cards {
+    gap: 8px;
+  }
+
+  .page-card {
+    min-width: 180px;
+    padding: 6px;
+  }
+
+  .page-preview {
+    width: 44px;
+    height: 60px;
+  }
+
+  .input-mode-bar {
+    margin-bottom: 7px;
+    padding-block: 7px;
+  }
+
+  .drawing-quickbar {
+    margin-bottom: 7px;
+    padding-block: 6px;
+  }
+
+  .toolbar {
+    gap: 5px;
+    margin-bottom: 6px;
+    padding: 6px;
+  }
+
+  .toolbar button {
+    padding: 7px 9px;
+  }
+
+  .canvas-help {
+    margin-bottom: 6px;
+  }
+
+  .canvas-wrap {
+    max-height: calc(100vh - 190px);
+  }
+}
+
+@media (max-width: 700px) {
+  .page-manager-header-actions {
+    width: 100%;
+  }
+
+  .page-manager-header-actions button {
+    flex: 1;
+  }
+}
