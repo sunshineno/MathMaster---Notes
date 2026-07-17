@@ -2,7 +2,7 @@
 
 Application web installable de prise de notes manuscrites pour les études de mathématiques.
 
-**Version actuelle : v1.7.0**
+**Version actuelle : v1.8.0**
 
 Site : https://sunshineno.github.io/MathMaster---Notes/
 
@@ -30,3 +30,8 @@ npm install
 npm run build
 npm run dev
 ```
+
+
+## Historique de sécurité
+
+Jusqu’à cinq instantanés locaux sont conservés dans IndexedDB.

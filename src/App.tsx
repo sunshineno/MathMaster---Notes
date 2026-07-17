@@ -28,6 +28,7 @@ import MathBlocksEditor from "./components/MathBlocksEditor";
 import AppTopBar from "./components/AppTopBar";
 import ExplorerSidebar from "./components/ExplorerSidebar";
 import PageNavigator from "./components/PageNavigator";
+import SnapshotDialog from "./components/SnapshotDialog";
 import {
   clearRecoverySnapshot,
   downloadBackup,
@@ -44,6 +45,7 @@ import { filterSubjects } from "./search/notebookSearch";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 import { exportChapterToPdf } from "./pdfExport";
 import { importPdfAsPages } from "./pdfImport";
+import { createNotebookSnapshot, type NotebookSnapshot } from "./snapshots";
 
 export default function App() {
   const [state, setState] = useState<NotebookState>(() => loadState());
@@ -57,6 +59,7 @@ export default function App() {
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
+  const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
 
   useEffect(() => {
     setSaveStatus("saving");
@@ -78,6 +81,21 @@ export default function App() {
     }, 300);
 
     return () => window.clearTimeout(timer);
+  }, [state]);
+
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => {
+      createNotebookSnapshot(state).catch(() => undefined);
+    }, 30_000);
+
+    const interval = window.setInterval(() => {
+      createNotebookSnapshot(state).catch(() => undefined);
+    }, 10 * 60_000);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(interval);
+    };
   }, [state]);
 
   useEffect(() => {
@@ -686,6 +704,17 @@ export default function App() {
   };
 
 
+  const createManualSnapshot = async () => {
+    await createNotebookSnapshot(state, "manual");
+  };
+
+  const restoreSnapshot = (snapshot: NotebookSnapshot) => {
+    setState(snapshot.state);
+    saveState(snapshot.state);
+    setSaveStatus("saved");
+    setSaveError("");
+  };
+
   const exportNotebookBackup = () => {
     downloadBackup(state);
   };
@@ -738,6 +767,14 @@ export default function App() {
         onRestore={restoreNotebookBackup}
         canInstall={!isInstalled && Boolean(installPrompt)}
         onInstall={installApp}
+        onOpenSnapshots={() => setSnapshotDialogOpen(true)}
+      />
+
+      <SnapshotDialog
+        open={snapshotDialogOpen}
+        onClose={() => setSnapshotDialogOpen(false)}
+        onRestore={restoreSnapshot}
+        onCreate={createManualSnapshot}
       />
 
       {(saveStatus === "error" ||

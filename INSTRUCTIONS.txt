@@ -1,19 +1,13 @@
-MATHMASTER NOTES — v1.7.1
+MATHMASTER NOTES — v1.8.0 HISTORIQUE DE SÉCURITÉ
 
-Remplace :
-- src/components/PageNavigator.tsx
-- package.json
-
-Ajoute :
-- src/components/PageNavigator.css
-
+Copie le contenu à la racine du dépôt.
 Ne remplace pas package-lock.json.
 
 Ensuite :
 npm run build
 npm run dev
 
-Le badge doit afficher v1.7.1 et les miniatures doivent redevenir compactes.
+Vérifie le badge v1.8.0 et le bouton Historique.
 
 Commit conseillé :
-Correction du gestionnaire de pages v1.7.1
+Historique de sécurité v1.8.0
