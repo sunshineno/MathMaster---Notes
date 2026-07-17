@@ -1,13 +1,19 @@
-MATHMASTER NOTES — v1.7.0
+MATHMASTER NOTES — v1.7.1
 
-Copie le contenu à la racine du dépôt.
+Remplace :
+- src/components/PageNavigator.tsx
+- package.json
+
+Ajoute :
+- src/components/PageNavigator.css
+
 Ne remplace pas package-lock.json.
 
 Ensuite :
 npm run build
 npm run dev
 
-Vérifie que v1.7.0 apparaît en haut.
+Le badge doit afficher v1.7.1 et les miniatures doivent redevenir compactes.
 
 Commit conseillé :
-Version certaine et déploiement fiable v1.7.0
+Correction du gestionnaire de pages v1.7.1

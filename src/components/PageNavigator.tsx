@@ -1,6 +1,15 @@
-import { ChevronDown, ChevronUp, Copy, FilePlus2, GripVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  FilePlus2,
+  GripVertical,
+  Pencil,
+  Trash2
+} from "lucide-react";
 import { useState } from "react";
 import type { NotePage } from "../types";
+import "./PageNavigator.css";
 
 interface PageNavigatorProps {
   pages: NotePage[];
@@ -11,6 +20,25 @@ interface PageNavigatorProps {
   onDuplicate: (pageId: string) => void;
   onDelete: (pageId: string) => void;
   onReorder: (sourcePageId: string, targetPageId: string) => void;
+}
+
+const COLLAPSED_KEY = "mathmaster-pages-collapsed";
+
+function paperLabel(page: NotePage, index: number) {
+  if (page.sourcePdfName) {
+    return `PDF · page ${page.sourcePdfPage ?? index + 1}`;
+  }
+
+  switch (page.paper) {
+    case "grid":
+      return "Petits carreaux";
+    case "lined":
+      return "Lignes";
+    case "dots":
+      return "Points";
+    default:
+      return "Blanche";
+  }
 }
 
 export default function PageNavigator({
@@ -25,129 +53,144 @@ export default function PageNavigator({
 }: PageNavigatorProps) {
   const [draggedPageId, setDraggedPageId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("mathmaster-pages-collapsed") === "true");
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === "true"
+  );
 
   const toggleCollapsed = () => {
     setCollapsed(current => {
       const next = !current;
-      localStorage.setItem("mathmaster-pages-collapsed", String(next));
+      localStorage.setItem(COLLAPSED_KEY, String(next));
       return next;
     });
   };
 
   return (
-    <section className={`page-manager ${collapsed ? "collapsed" : ""}`} aria-label="Gestionnaire de pages">
+    <section
+      className={`page-manager ${collapsed ? "collapsed" : ""}`}
+      aria-label="Gestionnaire de pages"
+    >
       <div className="page-manager-header">
-        <div>
+        <div className="page-manager-heading">
           <strong>Pages</strong>
-          <span>{pages.length} page{pages.length > 1 ? "s" : ""}</span>
+          <span>
+            {pages.length} page{pages.length > 1 ? "s" : ""}
+          </span>
         </div>
+
         <div className="page-manager-header-actions">
-          <button className="page-collapse-button" onClick={toggleCollapsed} title={collapsed ? "Afficher les pages" : "Réduire les pages"}>
+          <button
+            className="page-collapse-button"
+            onClick={toggleCollapsed}
+            title={collapsed ? "Afficher les pages" : "Réduire les pages"}
+          >
             {collapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}
             {collapsed ? "Afficher" : "Réduire"}
           </button>
-          <button onClick={onAdd} title="Ajouter une page">
+
+          <button
+            className="page-add-button"
+            onClick={onAdd}
+            title="Ajouter une page"
+          >
             <FilePlus2 size={17} />
             Nouvelle page
           </button>
         </div>
       </div>
 
-      {!collapsed && <div className="page-cards">
-        {pages.map((page, index) => {
-          const selected = page.id === selectedPageId;
-          const thumbnail = page.dataUrl || page.backgroundDataUrl;
+      {!collapsed && (
+        <div className="page-cards">
+          {pages.map((page, index) => {
+            const selected = page.id === selectedPageId;
+            const thumbnail = page.dataUrl || page.backgroundDataUrl;
 
-          return (
-            <article
-              key={page.id}
-              className={`page-card ${selected ? "selected" : ""} ${
-                dropTargetId === page.id ? "drop-target" : ""
-              }`}
-              draggable
-              onDragStart={event => {
-                setDraggedPageId(page.id);
-                event.dataTransfer.effectAllowed = "move";
-                event.dataTransfer.setData("text/plain", page.id);
-              }}
-              onDragOver={event => {
-                event.preventDefault();
-                if (draggedPageId && draggedPageId !== page.id) {
-                  setDropTargetId(page.id);
-                }
-              }}
-              onDragLeave={() => {
-                if (dropTargetId === page.id) setDropTargetId(null);
-              }}
-              onDrop={event => {
-                event.preventDefault();
-                const sourceId =
-                  draggedPageId || event.dataTransfer.getData("text/plain");
-                setDraggedPageId(null);
-                setDropTargetId(null);
-                if (sourceId && sourceId !== page.id) {
-                  onReorder(sourceId, page.id);
-                }
-              }}
-              onDragEnd={() => {
-                setDraggedPageId(null);
-                setDropTargetId(null);
-              }}
-            >
-              <button
-                className="page-card-main"
-                onClick={() => onSelect(page.id)}
-                onDoubleClick={() => onRename(page.id)}
+            return (
+              <article
+                key={page.id}
+                className={`page-card ${selected ? "selected" : ""} ${
+                  dropTargetId === page.id ? "drop-target" : ""
+                }`}
+                draggable
+                onDragStart={event => {
+                  setDraggedPageId(page.id);
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", page.id);
+                }}
+                onDragOver={event => {
+                  event.preventDefault();
+                  if (draggedPageId && draggedPageId !== page.id) {
+                    setDropTargetId(page.id);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dropTargetId === page.id) setDropTargetId(null);
+                }}
+                onDrop={event => {
+                  event.preventDefault();
+                  const sourceId =
+                    draggedPageId ||
+                    event.dataTransfer.getData("text/plain");
+
+                  setDraggedPageId(null);
+                  setDropTargetId(null);
+
+                  if (sourceId && sourceId !== page.id) {
+                    onReorder(sourceId, page.id);
+                  }
+                }}
+                onDragEnd={() => {
+                  setDraggedPageId(null);
+                  setDropTargetId(null);
+                }}
               >
-                <span className="page-drag-handle" title="Glisser pour déplacer">
-                  <GripVertical size={16} />
-                </span>
-
-                <span className="page-preview">
-                  {thumbnail ? (
-                    <img src={thumbnail} alt="" />
-                  ) : (
-                    <span className={`paper-preview paper-${page.paper}`} />
-                  )}
-                  <small>{index + 1}</small>
-                </span>
-
-                <span className="page-card-title">
-                  <strong>{page.title}</strong>
-                  <small>
-                    {page.sourcePdfName
-                      ? `PDF · page ${page.sourcePdfPage ?? index + 1}`
-                      : page.paper === "grid"
-                        ? "Petits carreaux"
-                        : page.paper === "lined"
-                          ? "Lignes"
-                          : page.paper === "dots"
-                            ? "Points"
-                            : "Blanche"}
-                  </small>
-                </span>
-              </button>
-
-              <div className="page-card-actions">
-                <button title="Renommer" onClick={() => onRename(page.id)}>
-                  <Pencil size={15} />
-                </button>
-                <button title="Dupliquer" onClick={() => onDuplicate(page.id)}>
-                  <Copy size={15} />
-                </button>
                 <button
-                  className="danger"
-                  title="Supprimer"
-                  onClick={() => onDelete(page.id)}
+                  className="page-card-main"
+                  onClick={() => onSelect(page.id)}
+                  onDoubleClick={() => onRename(page.id)}
                 >
-                  <Trash2 size={15} />
+                  <span
+                    className="page-drag-handle"
+                    title="Glisser pour déplacer"
+                  >
+                    <GripVertical size={16} />
+                  </span>
+
+                  <span className="page-preview">
+                    {thumbnail ? (
+                      <img src={thumbnail} alt="" />
+                    ) : (
+                      <span className={`paper-preview paper-${page.paper}`} />
+                    )}
+                    <small>{index + 1}</small>
+                  </span>
+
+                  <span className="page-card-title">
+                    <strong>{page.title}</strong>
+                    <small>{paperLabel(page, index)}</small>
+                  </span>
                 </button>
-              </div>
-            </article>
-          );
-        })}
-      </div>}
+
+                <div className="page-card-actions">
+                  <button title="Renommer" onClick={() => onRename(page.id)}>
+                    <Pencil size={15} />
+                  </button>
+                  <button title="Dupliquer" onClick={() => onDuplicate(page.id)}>
+                    <Copy size={15} />
+                  </button>
+                  <button
+                    className="danger"
+                    title="Supprimer"
+                    onClick={() => onDelete(page.id)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
