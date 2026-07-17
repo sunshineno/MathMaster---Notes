@@ -1,12 +1,16 @@
 # Historique des versions
 
-## v1.8.0 — Historique de sécurité
+## v1.9.0 — Connexion par email
 
-- cinq instantanés locaux maximum ;
-- création automatique toutes les dix minutes ;
-- création manuelle ;
-- restauration et suppression dans l’application ;
-- stockage IndexedDB indépendant.
+- authentification Supabase obligatoire ;
+- création de compte par email et mot de passe ;
+- connexion par email et mot de passe ;
+- lien magique envoyé par email ;
+- réinitialisation du mot de passe ;
+- session persistante ;
+- email du compte visible dans la barre supérieure ;
+- bouton de déconnexion ;
+- écran de configuration si les variables Supabase sont absentes.
 
 ## v1.7.0 — Version certaine et déploiement fiable
 

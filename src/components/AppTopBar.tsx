@@ -1,6 +1,7 @@
-import { BookOpen, Download, ExternalLink, HelpCircle, History, Search, ShieldCheck, Upload, X } from "lucide-react";
+import { BookOpen, Download, ExternalLink, HelpCircle, History, LogOut, Search, ShieldCheck, Upload, UserCircle, X } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_DATE_LABEL, VERSION_LABEL } from "../version";
+import { useAuth } from "../auth/AuthProvider";
 
 export type SaveStatus = "saved" | "saving" | "error";
 
@@ -30,6 +31,20 @@ export default function AppTopBar({
   onOpenSnapshots
 }: AppTopBarProps) {
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    setSignOutError("");
+    try {
+      await signOut();
+    } catch (error) {
+      setSignOutError(
+        error instanceof Error ? error.message : "Déconnexion impossible."
+      );
+    }
+  };
+
   const saveTitle = saveStatus === "error" ? saveError : persistentStorage ? "Stockage persistant activé" : "Sauvegarde locale active";
   const saveLabel = saveStatus === "saving" ? "Sauvegarde…" : saveStatus === "error" ? "Erreur de sauvegarde" : "Enregistré";
 
@@ -43,9 +58,17 @@ export default function AppTopBar({
         <label className="backup-button restore-button"><Upload size={18}/>Restaurer<input type="file" accept="application/json,.json" onChange={onRestore}/></label>
         <button className="about-button" onClick={onOpenSnapshots} title="Historique de sécurité"><History size={18}/>Historique</button>
         <button className="about-button" onClick={()=>setAboutOpen(true)}><HelpCircle size={18}/>À propos</button>
+        <div className="account-menu" title={user.email ?? "Compte connecté"}>
+          <UserCircle size={18}/>
+          <span>{user.email}</span>
+          <button onClick={handleSignOut} title="Se déconnecter">
+            <LogOut size={17}/>
+          </button>
+        </div>
         {canInstall&&<button className="install-button" onClick={onInstall}><Download size={18}/>Installer</button>}
       </div>
     </header>
+    {signOutError && <div className="account-error">{signOutError}</div>}
     {aboutOpen&&<div className="about-backdrop" onMouseDown={()=>setAboutOpen(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onMouseDown={e=>e.stopPropagation()}>
       <header><div><h2 id="about-title">MathMaster Notes</h2><p>Version réellement chargée dans ce navigateur</p></div><button className="about-close" onClick={()=>setAboutOpen(false)} aria-label="Fermer"><X size={20}/></button></header>
       <dl className="build-details"><div><dt>Version</dt><dd>{VERSION_LABEL}</dd></div><div><dt>Compilation</dt><dd>{BUILD_DATE_LABEL}</dd></div><div><dt>Commit</dt><dd><code>{BUILD_COMMIT}</code></dd></div></dl>

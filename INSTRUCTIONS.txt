@@ -1,13 +1,15 @@
-MATHMASTER NOTES — v1.8.0 HISTORIQUE DE SÉCURITÉ
+MATHMASTER NOTES — v1.9.0 CONNEXION EMAIL
 
-Copie le contenu à la racine du dépôt.
+Copie le contenu du patch à la racine du dépôt.
+
 Ne remplace pas package-lock.json.
 
-Ensuite :
-npm run build
-npm run dev
-
-Vérifie le badge v1.8.0 et le bouton Historique.
+Après copie :
+1. npm install
+2. créer .env.local avec les identifiants Supabase
+3. npm run build
+4. npm run dev
+5. tester inscription, confirmation email, connexion et déconnexion
 
 Commit conseillé :
-Historique de sécurité v1.8.0
+Connexion par email Supabase v1.9.0

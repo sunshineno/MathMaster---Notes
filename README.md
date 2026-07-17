@@ -2,7 +2,7 @@
 
 Application web installable de prise de notes manuscrites pour les études de mathématiques.
 
-**Version actuelle : v1.8.0**
+**Version actuelle : v1.7.0**
 
 Site : https://sunshineno.github.io/MathMaster---Notes/
 
@@ -32,6 +32,23 @@ npm run dev
 ```
 
 
-## Historique de sécurité
+## Connexion Supabase
 
-Jusqu’à cinq instantanés locaux sont conservés dans IndexedDB.
+La v1.9.0 nécessite un projet Supabase.
+
+Créer à la racine un fichier `.env.local` :
+
+```env
+VITE_SUPABASE_URL=https://ton-projet.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Dans Supabase, ajouter ces URL dans **Authentication → URL Configuration** :
+
+```text
+http://localhost:5173/MathMaster---Notes/
+https://sunshineno.github.io/MathMaster---Notes/
+```
+
+La clé publishable peut être utilisée dans une application web. Ne jamais utiliser
+une clé `secret` ou `service_role` dans le projet React.
