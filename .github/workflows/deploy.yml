@@ -19,17 +19,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
-      - run: npm install
+          registry-url: https://registry.npmjs.org/
+      - name: Forcer le registre npm public
+        run: |
+          npm config delete proxy || true
+          npm config delete https-proxy || true
+          npm config set registry https://registry.npmjs.org/
+      - name: Vérifier le package-lock
+        run: |
+          if grep -Eqi "applied-caas|internal\.api\.openai\.org" package-lock.json; then exit 1; fi
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
+        env:
+          GITHUB_SHA: ${{ github.sha }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-
   deploy:
     environment:
       name: github-pages
@@ -37,6 +49,5 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy
+      - uses: actions/deploy-pages@v4
         id: deployment
-        uses: actions/deploy-pages@v4

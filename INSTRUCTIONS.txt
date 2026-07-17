@@ -1,17 +1,13 @@
-MATHMASTER NOTES — v1.6.0 BLOCS MATHÉMATIQUES
+MATHMASTER NOTES — v1.7.0
 
-Remplace :
-- src/components/MathBlocksEditor.tsx
-- src/styles.css
-- package.json
-- README.md
-- CHANGELOG.md
-
+Copie le contenu à la racine du dépôt.
 Ne remplace pas package-lock.json.
 
-Après copie :
+Ensuite :
 npm run build
 npm run dev
 
+Vérifie que v1.7.0 apparaît en haut.
+
 Commit conseillé :
-Blocs mathématiques numérotés v1.6.0
+Version certaine et déploiement fiable v1.7.0
