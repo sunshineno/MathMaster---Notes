@@ -1,15 +1,12 @@
-MATHMASTER NOTES — v1.9.0 CONNEXION EMAIL
+MATHMASTER NOTES — v2.0.0 SYNCHRONISATION CLOUD
 
-Copie le contenu du patch à la racine du dépôt.
-
-Ne remplace pas package-lock.json.
-
-Après copie :
-1. npm install
-2. créer .env.local avec les identifiants Supabase
-3. npm run build
-4. npm run dev
-5. tester inscription, confirmation email, connexion et déconnexion
+1. Copie le contenu du patch dans la racine du dépôt.
+2. Ne remplace pas package-lock.json.
+3. Dans Supabase > SQL Editor, ouvre supabase/setup-v2.sql, colle tout, puis clique Run.
+4. Vérifie que les secrets GitHub VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY existent.
+5. Lance npm install puis npm run build et npm run dev.
+6. Connecte-toi, modifie une note et vérifie l'indicateur Cloud à jour.
+7. Teste ensuite le même compte dans un autre navigateur ou appareil.
 
 Commit conseillé :
-Connexion par email Supabase v1.9.0
+Synchronisation cloud sécurisée v2.0.0

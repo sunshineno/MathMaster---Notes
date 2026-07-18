@@ -1,7 +1,8 @@
-import { BookOpen, Download, ExternalLink, HelpCircle, History, LogOut, Search, ShieldCheck, Upload, UserCircle, X } from "lucide-react";
+import { BookOpen, Cloud, CloudOff, Download, ExternalLink, HelpCircle, History, LoaderCircle, LogOut, Search, ShieldCheck, Upload, UserCircle, X } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 import { APP_VERSION, BUILD_COMMIT, BUILD_DATE_LABEL, VERSION_LABEL } from "../version";
 import { useAuth } from "../auth/AuthProvider";
+import { formatCloudDate, type CloudSyncStatus } from "../cloudSync";
 
 export type SaveStatus = "saved" | "saving" | "error";
 
@@ -16,6 +17,9 @@ interface AppTopBarProps {
   canInstall: boolean;
   onInstall: () => void;
   onOpenSnapshots: () => void;
+  cloudStatus: CloudSyncStatus;
+  cloudError: string;
+  cloudUpdatedAt: string | null;
 }
 
 export default function AppTopBar({
@@ -28,7 +32,10 @@ export default function AppTopBar({
   onRestore,
   canInstall,
   onInstall,
-  onOpenSnapshots
+  onOpenSnapshots,
+  cloudStatus,
+  cloudError,
+  cloudUpdatedAt
 }: AppTopBarProps) {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [signOutError, setSignOutError] = useState("");
@@ -48,11 +55,35 @@ export default function AppTopBar({
   const saveTitle = saveStatus === "error" ? saveError : persistentStorage ? "Stockage persistant activé" : "Sauvegarde locale active";
   const saveLabel = saveStatus === "saving" ? "Sauvegarde…" : saveStatus === "error" ? "Erreur de sauvegarde" : "Enregistré";
 
+  const cloudLabel =
+    cloudStatus === "initializing"
+      ? "Connexion cloud…"
+      : cloudStatus === "syncing"
+        ? "Synchronisation…"
+        : cloudStatus === "synced"
+          ? "Cloud à jour"
+          : cloudStatus === "offline"
+            ? "Hors ligne"
+            : cloudStatus === "conflict"
+              ? "Conflit détecté"
+              : "Erreur cloud";
+
+  const cloudTitle =
+    cloudStatus === "error"
+      ? cloudError
+      : cloudStatus === "offline"
+        ? "Les modifications restent enregistrées localement et seront synchronisées au retour de la connexion."
+        : `Dernière synchronisation : ${formatCloudDate(cloudUpdatedAt)}`;
+
   return <>
     <header className="topbar">
       <div className="brand"><BookOpen/><div><div className="brand-title-line"><strong>MathMaster Notes</strong><button className="version-badge" onClick={()=>setAboutOpen(true)} title={`Version ${APP_VERSION} — build ${BUILD_COMMIT}`}>{VERSION_LABEL}</button></div><span>Cahier numérique de mathématiques</span></div></div>
       <div className="topbar-actions">
         <div className={`save-indicator save-${saveStatus}`} title={saveTitle}><ShieldCheck size={17}/>{saveLabel}</div>
+        <div className={`cloud-indicator cloud-${cloudStatus}`} title={cloudTitle}>
+          {(cloudStatus === "syncing" || cloudStatus === "initializing") ? <LoaderCircle className="spin" size={17}/> : cloudStatus === "offline" || cloudStatus === "error" ? <CloudOff size={17}/> : <Cloud size={17}/>}
+          <span>{cloudLabel}</span>
+        </div>
         <div className="search"><Search size={18}/><input value={search} onChange={e=>onSearchChange(e.target.value)} placeholder="Rechercher matière, chapitre, page ou contenu…"/></div>
         <button className="backup-button" onClick={onBackup}><Download size={18}/>Sauvegarder</button>
         <label className="backup-button restore-button"><Upload size={18}/>Restaurer<input type="file" accept="application/json,.json" onChange={onRestore}/></label>

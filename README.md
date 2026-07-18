@@ -34,7 +34,7 @@ npm run dev
 
 ## Connexion Supabase
 
-La v1.9.0 nécessite un projet Supabase.
+La v2.0.0 nécessite un projet Supabase.
 
 Créer à la racine un fichier `.env.local` :
 
@@ -52,3 +52,10 @@ https://sunshineno.github.io/MathMaster---Notes/
 
 La clé publishable peut être utilisée dans une application web. Ne jamais utiliser
 une clé `secret` ou `service_role` dans le projet React.
+
+
+## Synchronisation cloud v2.0.0
+
+Exécuter `supabase/setup-v2.sql` dans le SQL Editor du projet Supabase.
+La table `user_notebooks` est protégée par RLS et chaque ligne appartient à `auth.uid()`.
+Le cahier est enregistré localement immédiatement, puis envoyé dans le cloud après environ 1,8 seconde sans modification.

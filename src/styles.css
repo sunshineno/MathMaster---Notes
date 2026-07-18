@@ -1766,3 +1766,52 @@ canvas {
     flex-direction: column;
   }
 }
+
+
+/* v2.0.0 — état de synchronisation cloud */
+.cloud-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid #475569;
+  border-radius: 9px;
+  padding: 6px 9px;
+  background: #1e293b;
+  color: #dbeafe;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.cloud-synced {
+  border-color: #15803d;
+  background: rgba(21, 128, 61, .2);
+  color: #bbf7d0;
+}
+
+.cloud-syncing,
+.cloud-initializing {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, .2);
+  color: #bfdbfe;
+}
+
+.cloud-offline {
+  border-color: #d97706;
+  background: rgba(217, 119, 6, .2);
+  color: #fde68a;
+}
+
+.cloud-error,
+.cloud-conflict {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, .2);
+  color: #fecaca;
+}
+
+@media (max-width: 1150px) {
+  .cloud-indicator span {
+    display: none;
+  }
+}

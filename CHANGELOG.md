@@ -1,5 +1,16 @@
 # Historique des versions
 
+## v2.0.0 — Synchronisation cloud sécurisée
+
+- sauvegarde automatique du cahier dans Supabase ;
+- récupération du cahier sur tous les appareils connectés au même compte ;
+- copie locale conservée pour le fonctionnement hors ligne ;
+- détection des modifications locales et distantes ;
+- résolution guidée des conflits ;
+- indicateur Cloud à jour / Synchronisation / Hors ligne / Erreur ;
+- table protégée par Row Level Security : chaque compte accède uniquement à son cahier ;
+- déploiement GitHub Pages configuré avec les secrets Supabase.
+
 ## v1.9.0 — Connexion par email
 
 - authentification Supabase obligatoire ;

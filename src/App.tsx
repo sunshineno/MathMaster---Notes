@@ -46,8 +46,19 @@ import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
 import { exportChapterToPdf } from "./pdfExport";
 import { importPdfAsPages } from "./pdfImport";
 import { createNotebookSnapshot, type NotebookSnapshot } from "./snapshots";
+import { useAuth } from "./auth/AuthProvider";
+import {
+  fetchCloudNotebook,
+  formatCloudDate,
+  hashNotebook,
+  readCloudMeta,
+  uploadCloudNotebook,
+  writeCloudMeta,
+  type CloudSyncStatus
+} from "./cloudSync";
 
 export default function App() {
+  const { user } = useAuth();
   const [state, setState] = useState<NotebookState>(() => loadState());
   const [search, setSearch] = useState("");
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
@@ -60,6 +71,165 @@ export default function App() {
   const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>("initializing");
+  const [cloudError, setCloudError] = useState("");
+  const [cloudUpdatedAt, setCloudUpdatedAt] = useState<string | null>(null);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [lastUploadedHash, setLastUploadedHash] = useState("");
+
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const initializeCloud = async () => {
+      setCloudReady(false);
+      setCloudStatus("initializing");
+      setCloudError("");
+
+      try {
+        const localState = loadState();
+        const localHash = hashNotebook(localState);
+        const meta = readCloudMeta(user.id);
+        const cloud = await fetchCloudNotebook(user.id);
+
+        if (cancelled) return;
+
+        if (!cloud) {
+          const created = await uploadCloudNotebook(user.id, localState);
+          if (cancelled) return;
+          writeCloudMeta(user.id, localState, created.updated_at);
+          setLastUploadedHash(localHash);
+          setCloudUpdatedAt(created.updated_at);
+          setCloudStatus("synced");
+          setCloudReady(true);
+          return;
+        }
+
+        const cloudHash = hashNotebook(cloud.state);
+        setCloudUpdatedAt(cloud.updated_at);
+
+        if (localHash === cloudHash) {
+          writeCloudMeta(user.id, cloud.state, cloud.updated_at);
+          setLastUploadedHash(cloudHash);
+          setCloudStatus("synced");
+          setCloudReady(true);
+          return;
+        }
+
+        if (meta?.lastSyncedHash === localHash) {
+          setState(cloud.state);
+          saveState(cloud.state);
+          writeCloudMeta(user.id, cloud.state, cloud.updated_at);
+          setLastUploadedHash(cloudHash);
+          setCloudStatus("synced");
+          setCloudReady(true);
+          return;
+        }
+
+        if (meta?.lastSyncedHash === cloudHash) {
+          const uploaded = await uploadCloudNotebook(user.id, localState);
+          if (cancelled) return;
+          writeCloudMeta(user.id, localState, uploaded.updated_at);
+          setLastUploadedHash(localHash);
+          setCloudUpdatedAt(uploaded.updated_at);
+          setCloudStatus("synced");
+          setCloudReady(true);
+          return;
+        }
+
+        setCloudStatus("conflict");
+        const useCloud = confirm(
+          `Deux versions différentes de ton cahier ont été trouvées.\n\n` +
+            `OK : utiliser la version cloud (${formatCloudDate(cloud.updated_at)}).\n` +
+            `Annuler : conserver cette version locale et l’envoyer dans le cloud.`
+        );
+
+        if (useCloud) {
+          setState(cloud.state);
+          saveState(cloud.state);
+          writeCloudMeta(user.id, cloud.state, cloud.updated_at);
+          setLastUploadedHash(cloudHash);
+        } else {
+          const uploaded = await uploadCloudNotebook(user.id, localState);
+          if (cancelled) return;
+          writeCloudMeta(user.id, localState, uploaded.updated_at);
+          setLastUploadedHash(localHash);
+          setCloudUpdatedAt(uploaded.updated_at);
+        }
+
+        setCloudStatus("synced");
+        setCloudReady(true);
+      } catch (error) {
+        if (cancelled) return;
+        const message =
+          error instanceof Error
+            ? error.message
+            : "La synchronisation cloud est indisponible.";
+        setCloudError(message);
+        setCloudStatus(navigator.onLine ? "error" : "offline");
+        setCloudReady(true);
+      }
+    };
+
+    void initializeCloud();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
+
+  useEffect(() => {
+    if (!cloudReady) return;
+
+    const updateConnectionStatus = () => {
+      if (!navigator.onLine) {
+        setCloudStatus("offline");
+      } else if (cloudStatus === "offline") {
+        setCloudStatus("synced");
+      }
+    };
+
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+    return () => {
+      window.removeEventListener("online", updateConnectionStatus);
+      window.removeEventListener("offline", updateConnectionStatus);
+    };
+  }, [cloudReady, cloudStatus]);
+
+  useEffect(() => {
+    if (!cloudReady) return;
+
+    const currentHash = hashNotebook(state);
+    if (currentHash === lastUploadedHash) return;
+
+    if (!navigator.onLine) {
+      setCloudStatus("offline");
+      return;
+    }
+
+    setCloudStatus("syncing");
+    setCloudError("");
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const uploaded = await uploadCloudNotebook(user.id, state);
+        writeCloudMeta(user.id, state, uploaded.updated_at);
+        setLastUploadedHash(currentHash);
+        setCloudUpdatedAt(uploaded.updated_at);
+        setCloudStatus("synced");
+      } catch (error) {
+        setCloudError(
+          error instanceof Error
+            ? error.message
+            : "Impossible d’envoyer le cahier dans le cloud."
+        );
+        setCloudStatus(navigator.onLine ? "error" : "offline");
+      }
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
+  }, [state, cloudReady, lastUploadedHash, user.id]);
 
   useEffect(() => {
     setSaveStatus("saving");
@@ -768,6 +938,9 @@ export default function App() {
         canInstall={!isInstalled && Boolean(installPrompt)}
         onInstall={installApp}
         onOpenSnapshots={() => setSnapshotDialogOpen(true)}
+        cloudStatus={cloudStatus}
+        cloudError={cloudError}
+        cloudUpdatedAt={cloudUpdatedAt}
       />
 
       <SnapshotDialog
