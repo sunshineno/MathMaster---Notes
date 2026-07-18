@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { CanvasLatexObject as CanvasLatexObjectType, PaperType } from "../types";
+import type { CanvasLatexObject as CanvasLatexObjectType, CanvasTextObject as CanvasTextObjectType, PaperType } from "../types";
 import CanvasLatexObject from "./CanvasLatexObject";
+import CanvasTextObject from "./CanvasTextObject";
 import DrawingToolbar from "./DrawingToolbar";
 import { type DrawingSettings, type DrawingTool, type InputMode } from "../editor/drawingTypes";
 
@@ -12,8 +13,10 @@ interface Props {
   onExtractSelection?: (imageDataUrl: string, rect: SelectionRect) => void;
   canvasHeight?: number;
   latexObjects?: CanvasLatexObjectType[];
+  textObjects?: CanvasTextObjectType[];
   onCanvasHeightChange?: (height: number) => void;
   onLatexObjectsChange?: (objects: CanvasLatexObjectType[]) => void;
+  onTextObjectsChange?: (objects: CanvasTextObjectType[]) => void;
   onEditLatexObject?: (object: CanvasLatexObjectType) => void;
 }
 
@@ -62,8 +65,8 @@ function loadDrawingSettings(): DrawingSettings {
 
 export default function CanvasBoard({
   dataUrl, backgroundDataUrl, paper, onSave, onExtractSelection,
-  canvasHeight = DEFAULT_CANVAS_HEIGHT, latexObjects = [], onCanvasHeightChange,
-  onLatexObjectsChange, onEditLatexObject
+  canvasHeight = DEFAULT_CANVAS_HEIGHT, latexObjects = [], textObjects = [], onCanvasHeightChange,
+  onLatexObjectsChange, onTextObjectsChange, onEditLatexObject
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -108,6 +111,7 @@ export default function CanvasBoard({
   );
   const [compactToolbar, setCompactToolbar] = useState(false);
   const [selectedLatexObjectId, setSelectedLatexObjectId] = useState<string | null>(null);
+  const [selectedTextObjectId, setSelectedTextObjectId] = useState<string | null>(null);
   const temporaryTool = useRef<DrawingTool | null>(null);
 
   useEffect(() => {
@@ -846,6 +850,35 @@ export default function CanvasBoard({
     setSelectedLatexObjectId(null);
   };
 
+  const addTextObject = () => {
+    const wrap = wrapRef.current;
+    const x = Math.max(40, ((wrap?.scrollLeft ?? 0) + 120) / zoom);
+    const y = Math.max(40, ((wrap?.scrollTop ?? 0) + 160) / zoom);
+    const object: CanvasTextObjectType = {
+      id: crypto.randomUUID(),
+      html: "",
+      x,
+      y,
+      width: 560,
+      height: 90,
+      fontSize: 24,
+      color: "#111827",
+      align: "left"
+    };
+    onTextObjectsChange?.([...textObjects, object]);
+    setSelectedLatexObjectId(null);
+    setSelectedTextObjectId(object.id);
+  };
+
+  const updateTextObject = (id: string, changes: Partial<CanvasTextObjectType>) => {
+    onTextObjectsChange?.(textObjects.map(object => object.id === id ? { ...object, ...changes } : object));
+  };
+
+  const deleteTextObject = (id: string) => {
+    onTextObjectsChange?.(textObjects.filter(object => object.id !== id));
+    setSelectedTextObjectId(null);
+  };
+
   const save = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -941,10 +974,10 @@ export default function CanvasBoard({
 
       <div className="infinite-canvas-status">
         <span>Espace de travail : {Math.round(canvasHeight / 1200)} sections</span>
-        <button onClick={extendCanvas} disabled={canvasHeight >= MAX_CANVAS_HEIGHT}>+ Agrandir la page</button>
+        <div className="infinite-canvas-actions"><button className="add-keyboard-text" onClick={addTextObject}>T Texte clavier</button><button onClick={extendCanvas} disabled={canvasHeight >= MAX_CANVAS_HEIGHT}>+ Agrandir la page</button></div>
       </div>
 
-      <div className="canvas-wrap canvas-wrap-long" ref={wrapRef} onWheel={handleWheel} onPointerDown={() => setSelectedLatexObjectId(null)}>
+      <div className="canvas-wrap canvas-wrap-long" ref={wrapRef} onWheel={handleWheel} onPointerDown={() => { setSelectedLatexObjectId(null); setSelectedTextObjectId(null); }}>
         <div className={`canvas-stage ${backgroundDataUrl ? "pdf-canvas-stage" : ""}`} style={{ width: `${CANVAS_WIDTH * zoom}px`, height: `${canvasHeight * zoom}px` }}>
           {backgroundDataUrl && (
             <img
@@ -966,6 +999,18 @@ export default function CanvasBoard({
             onPointerUp={pointerUp}
             onPointerCancel={pointerUp}
           />
+
+          {textObjects.map(object => (
+            <CanvasTextObject
+              key={object.id}
+              object={object}
+              zoom={zoom}
+              selected={selectedTextObjectId === object.id}
+              onSelect={() => { setSelectedTextObjectId(object.id); setSelectedLatexObjectId(null); }}
+              onChange={changes => updateTextObject(object.id, changes)}
+              onDelete={() => deleteTextObject(object.id)}
+            />
+          ))}
 
           {latexObjects.map(object => (
             <CanvasLatexObject

@@ -22,6 +22,18 @@ export interface MathBlock {
   collapsed: boolean;
 }
 
+export interface CanvasTextObject {
+  id: string;
+  html: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  color: string;
+  align: "left" | "center" | "right";
+}
+
 export interface CanvasLatexObject {
   id: string;
   latex: string;
@@ -43,6 +55,7 @@ export interface NotePage {
   sourcePdfPage?: number;
   canvasHeight?: number;
   canvasLatexObjects?: CanvasLatexObject[];
+  canvasTextObjects?: CanvasTextObject[];
 }
 
 export interface Chapter {

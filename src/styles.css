@@ -2025,3 +2025,217 @@ canvas {
 .canvas-latex-actions { position:absolute; right:-8px; top:-34px; display:flex; gap:5px; }
 .canvas-latex-actions button { width:28px; height:28px; display:grid; place-items:center; border:1px solid #cbd5e1; border-radius:7px; background:white; cursor:pointer; }
 .canvas-latex-width { position:absolute; left:10px; right:10px; bottom:-18px; width:calc(100% - 20px); }
+
+/* v4.0 — texte clavier et espace LaTeX */
+.workspace-mode-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.workspace-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #475569;
+  font-weight: 700;
+}
+
+.workspace-mode-switch button.active {
+  background: #1d4ed8;
+  color: white;
+  box-shadow: 0 2px 7px rgb(37 99 235 / 25%);
+}
+
+.infinite-canvas-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.infinite-canvas-status .add-keyboard-text {
+  background: #172554;
+  color: white;
+  border-color: #172554;
+}
+
+.canvas-text-object {
+  position: absolute;
+  z-index: 6;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 72%);
+  line-height: 1.45;
+  overflow: visible;
+  cursor: text;
+}
+
+.canvas-text-object.selected {
+  border-color: #2563eb;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 13%);
+}
+
+.canvas-text-editor {
+  min-height: 1.5em;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.canvas-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+}
+
+.canvas-text-toolbar {
+  position: absolute;
+  left: -1px;
+  bottom: calc(100% + 7px);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 22px rgb(15 23 42 / 16%);
+  white-space: nowrap;
+}
+
+.canvas-text-toolbar button,
+.canvas-text-toolbar select,
+.canvas-text-toolbar input {
+  height: 29px;
+  min-width: 29px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #f8fafc;
+}
+
+.canvas-text-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.canvas-text-toolbar button.danger { color: #b91c1c; }
+.canvas-text-toolbar input[type="color"] { width: 32px; padding: 2px; }
+.canvas-text-width { width: 100%; height: 11px; margin-top: 5px; }
+
+.latex-workspace {
+  margin: 16px 20px 30px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #e2e8f0;
+  overflow: hidden;
+  min-height: 720px;
+}
+
+.latex-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 18px;
+  background: #0f172a;
+  color: white;
+}
+
+.latex-workspace-header h2 { margin: 0 0 3px; font-size: 19px; }
+.latex-workspace-header p { margin: 0; color: #cbd5e1; font-size: 13px; }
+.latex-workspace-header > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
+.latex-workspace-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #475569;
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: #1e293b;
+  color: white;
+  cursor: pointer;
+}
+
+.latex-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 670px;
+}
+
+.latex-workspace.with-preview .latex-workspace-grid {
+  grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+}
+
+.latex-code-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #111827;
+  color: #e5e7eb;
+  border-right: 1px solid #334155;
+}
+
+.latex-locked-code {
+  margin: 0;
+  padding: 15px 18px;
+  max-height: 230px;
+  overflow: auto;
+  background: #0b1220;
+  color: #94a3b8;
+  font: 13px/1.55 "Cascadia Code", "Fira Code", Consolas, monospace;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.latex-code-column textarea {
+  flex: 1;
+  min-height: 400px;
+  resize: none;
+  border: 0;
+  border-block: 1px solid #334155;
+  outline: none;
+  padding: 18px;
+  background: #111827;
+  color: #f8fafc;
+  caret-color: #60a5fa;
+  font: 15px/1.65 "Cascadia Code", "Fira Code", Consolas, monospace;
+  tab-size: 2;
+}
+
+.latex-preview-column {
+  padding: 24px;
+  overflow: auto;
+  background: #cbd5e1;
+}
+
+.latex-preview-paper {
+  min-height: 620px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 58px 64px;
+  background: white;
+  color: #111827;
+  box-shadow: 0 5px 20px rgb(15 23 42 / 17%);
+  font: 16px/1.65 Georgia, "Times New Roman", serif;
+}
+
+.latex-preview-paper h2 { margin-top: 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 7px; }
+.latex-preview-box { margin: 16px 0; padding: 13px 15px; border-left: 4px solid #2563eb; background: #eff6ff; }
+.latex-preview-proof { margin: 16px 0; }
+.latex-preview-empty { color: #64748b; }
+
+@media (max-width: 1000px) {
+  .latex-workspace.with-preview .latex-workspace-grid { grid-template-columns: 1fr; }
+  .latex-workspace-header { align-items: flex-start; flex-direction: column; }
+  .latex-preview-column { border-top: 1px solid #94a3b8; }
+  .latex-preview-paper { padding: 35px 28px; }
+}

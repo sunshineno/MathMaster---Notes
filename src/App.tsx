@@ -21,7 +21,9 @@ import {
   LoaderCircle,
   Maximize2,
   Minimize2,
-  GraduationCap
+  GraduationCap,
+  Keyboard,
+  Sigma
 } from "lucide-react";
 import CanvasBoard from "./components/CanvasBoard";
 import MathBlocksEditor from "./components/MathBlocksEditor";
@@ -30,6 +32,7 @@ import ExplorerSidebar from "./components/ExplorerSidebar";
 import PageNavigator from "./components/PageNavigator";
 import SnapshotDialog from "./components/SnapshotDialog";
 import LatexSelectionDialog from "./components/LatexSelectionDialog";
+import LatexWorkspace from "./components/LatexWorkspace";
 import {
   clearRecoverySnapshot,
   downloadBackup,
@@ -79,6 +82,7 @@ export default function App() {
   const [cloudUpdatedAt, setCloudUpdatedAt] = useState<string | null>(null);
   const [cloudReady, setCloudReady] = useState(false);
   const [lastUploadedHash, setLastUploadedHash] = useState("");
+  const [workspaceMode, setWorkspaceMode] = useState<"notebook" | "latex">("notebook");
 
 
   useEffect(() => {
@@ -1058,6 +1062,18 @@ export default function App() {
                       fill={chapter.favorite ? "currentColor" : "none"}
                     />
                   </button>
+                  <div className="workspace-mode-switch" role="group" aria-label="Mode de travail">
+                    <button
+                      className={workspaceMode === "notebook" ? "active" : ""}
+                      onClick={() => setWorkspaceMode("notebook")}
+                      title="Cahier : manuscrit et texte clavier"
+                    ><Keyboard size={16} /> Cahier</button>
+                    <button
+                      className={workspaceMode === "latex" ? "active" : ""}
+                      onClick={() => setWorkspaceMode("latex")}
+                      title="Éditeur LaTeX complet"
+                    ><Sigma size={16} /> LaTeX</button>
+                  </div>
                   <select
                     value={page.paper}
                     onChange={event =>
@@ -1085,38 +1101,45 @@ export default function App() {
                 onReorder={reorderPages}
               />
 
-              <CanvasBoard
-                dataUrl={page.dataUrl}
-                backgroundDataUrl={page.backgroundDataUrl}
-                paper={page.paper}
-                onSave={dataUrl => updatePage({ dataUrl })}
-                canvasHeight={page.canvasHeight ?? 2400}
-                latexObjects={page.canvasLatexObjects ?? []}
-                onCanvasHeightChange={canvasHeight => updatePage({ canvasHeight })}
-                onLatexObjectsChange={canvasLatexObjects => updatePage({ canvasLatexObjects })}
-                onEditLatexObject={object => setEditingLatexObject(object)}
-                onExtractSelection={(image, rect) => setLatexSelection({ image, rect })}
-              />
+              {workspaceMode === "notebook" ? (
+                <>
+                  <CanvasBoard
+                    dataUrl={page.dataUrl}
+                    backgroundDataUrl={page.backgroundDataUrl}
+                    paper={page.paper}
+                    onSave={dataUrl => updatePage({ dataUrl })}
+                    canvasHeight={page.canvasHeight ?? 2400}
+                    latexObjects={page.canvasLatexObjects ?? []}
+                    textObjects={page.canvasTextObjects ?? []}
+                    onCanvasHeightChange={canvasHeight => updatePage({ canvasHeight })}
+                    onLatexObjectsChange={canvasLatexObjects => updatePage({ canvasLatexObjects })}
+                    onTextObjectsChange={canvasTextObjects => updatePage({ canvasTextObjects })}
+                    onEditLatexObject={object => setEditingLatexObject(object)}
+                    onExtractSelection={(image, rect) => setLatexSelection({ image, rect })}
+                  />
 
-              <MathBlocksEditor
-                blocks={page.blocks ?? []}
-                onChange={updatePageBlocks}
-              />
+                  <MathBlocksEditor
+                    blocks={page.blocks ?? []}
+                    onChange={updatePageBlocks}
+                  />
 
-              <details className="latex-advanced-panel">
-                <summary>Mode LaTeX libre avancé</summary>
-                <p>
-                  Utilisé seulement lorsque la page ne contient aucun bloc
-                  mathématique.
-                </p>
-                <textarea
-                  value={page.latex}
-                  onChange={event => updatePage({ latex: event.target.value })}
-                  placeholder={
-                    "Exemple :\n\\begin{theoreme}\nTout groupe d'ordre premier est cyclique.\n\\end{theoreme}"
-                  }
+                  <details className="latex-advanced-panel">
+                    <summary>Code LaTeX rapide de la page</summary>
+                    <p>Cette zone utilise le même contenu que l’espace LaTeX complet.</p>
+                    <textarea
+                      value={page.latex}
+                      onChange={event => updatePage({ latex: event.target.value })}
+                      placeholder={"Exemple :\n\\begin{theoreme}\nTout groupe d'ordre premier est cyclique.\n\\end{theoreme}"}
+                    />
+                  </details>
+                </>
+              ) : (
+                <LatexWorkspace
+                  title={`${chapter.title}-${page.title}`}
+                  body={page.latex}
+                  onChange={latex => updatePage({ latex })}
                 />
-              </details>
+              )}
             </>
           ) : (
             <div className="empty-state">
