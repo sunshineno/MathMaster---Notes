@@ -40,7 +40,7 @@ import {
   saveState,
   type StorageInfo
 } from "./storage";
-import type { MathBlock, NotebookState, PaperType } from "./types";
+import type { CanvasLatexObject, MathBlock, NotebookState, PaperType } from "./types";
 import { createTemplateBlocks, describeTemplates, parseChapterTemplate } from "./math/chapterTemplates";
 import { filterSubjects } from "./search/notebookSearch";
 import { buildLatexDocument, downloadTextFile } from "./latexTemplate";
@@ -72,7 +72,8 @@ export default function App() {
   const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
-  const [latexSelectionImage, setLatexSelectionImage] = useState<string | null>(null);
+  const [latexSelection, setLatexSelection] = useState<{ image: string; rect: { x: number; y: number; width: number; height: number } } | null>(null);
+  const [editingLatexObject, setEditingLatexObject] = useState<CanvasLatexObject | null>(null);
   const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>("initializing");
   const [cloudError, setCloudError] = useState("");
   const [cloudUpdatedAt, setCloudUpdatedAt] = useState<string | null>(null);
@@ -1089,7 +1090,12 @@ export default function App() {
                 backgroundDataUrl={page.backgroundDataUrl}
                 paper={page.paper}
                 onSave={dataUrl => updatePage({ dataUrl })}
-                onExtractSelection={imageDataUrl => setLatexSelectionImage(imageDataUrl)}
+                canvasHeight={page.canvasHeight ?? 2400}
+                latexObjects={page.canvasLatexObjects ?? []}
+                onCanvasHeightChange={canvasHeight => updatePage({ canvasHeight })}
+                onLatexObjectsChange={canvasLatexObjects => updatePage({ canvasLatexObjects })}
+                onEditLatexObject={object => setEditingLatexObject(object)}
+                onExtractSelection={(image, rect) => setLatexSelection({ image, rect })}
               />
 
               <MathBlocksEditor
@@ -1122,15 +1128,37 @@ export default function App() {
         </main>
       </div>
 
-      {latexSelectionImage && page && (
+      {latexSelection && page && (
         <LatexSelectionDialog
-          imageDataUrl={latexSelectionImage}
-          onClose={() => setLatexSelectionImage(null)}
+          imageDataUrl={latexSelection.image}
+          onClose={() => setLatexSelection(null)}
           onInsert={latex => {
-            const currentLatex = page.latex.trim();
-            const addition = `\\[${latex}\\]`;
-            updatePage({ latex: currentLatex ? `${currentLatex}\n\n${addition}` : addition });
-            setLatexSelectionImage(null);
+            const object: CanvasLatexObject = {
+              id: crypto.randomUUID(),
+              latex,
+              x: latexSelection.rect.x,
+              y: latexSelection.rect.y,
+              width: Math.max(260, latexSelection.rect.width),
+              fontSize: 34
+            };
+            updatePage({ canvasLatexObjects: [...(page.canvasLatexObjects ?? []), object] });
+            setLatexSelection(null);
+          }}
+        />
+      )}
+
+      {editingLatexObject && page && (
+        <LatexSelectionDialog
+          imageDataUrl={page.dataUrl || page.backgroundDataUrl || ""}
+          initialLatex={editingLatexObject.latex}
+          onClose={() => setEditingLatexObject(null)}
+          onInsert={latex => {
+            updatePage({
+              canvasLatexObjects: (page.canvasLatexObjects ?? []).map(object =>
+                object.id === editingLatexObject.id ? { ...object, latex } : object
+              )
+            });
+            setEditingLatexObject(null);
           }}
         />
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { PaperType } from "../types";
+import type { CanvasLatexObject as CanvasLatexObjectType, PaperType } from "../types";
+import CanvasLatexObject from "./CanvasLatexObject";
 import DrawingToolbar from "./DrawingToolbar";
 import { type DrawingSettings, type DrawingTool, type InputMode } from "../editor/drawingTypes";
 
@@ -8,7 +9,12 @@ interface Props {
   backgroundDataUrl?: string;
   paper: PaperType;
   onSave: (dataUrl: string) => void;
-  onExtractSelection?: (imageDataUrl: string) => void;
+  onExtractSelection?: (imageDataUrl: string, rect: SelectionRect) => void;
+  canvasHeight?: number;
+  latexObjects?: CanvasLatexObjectType[];
+  onCanvasHeightChange?: (height: number) => void;
+  onLatexObjectsChange?: (objects: CanvasLatexObjectType[]) => void;
+  onEditLatexObject?: (object: CanvasLatexObjectType) => void;
 }
 
 interface Point {
@@ -30,7 +36,8 @@ interface TouchPoint {
 }
 
 const CANVAS_WIDTH = 1400;
-const CANVAS_HEIGHT = 2400;
+const DEFAULT_CANVAS_HEIGHT = 2400;
+const MAX_CANVAS_HEIGHT = 9600;
 const DRAWING_SETTINGS_KEY = "mathmaster-drawing-settings-v1";
 
 const DEFAULT_DRAWING_SETTINGS: DrawingSettings = {
@@ -53,7 +60,11 @@ function loadDrawingSettings(): DrawingSettings {
   }
 }
 
-export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave, onExtractSelection }: Props) {
+export default function CanvasBoard({
+  dataUrl, backgroundDataUrl, paper, onSave, onExtractSelection,
+  canvasHeight = DEFAULT_CANVAS_HEIGHT, latexObjects = [], onCanvasHeightChange,
+  onLatexObjectsChange, onEditLatexObject
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const drawing = useRef(false);
@@ -96,6 +107,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
     initialSettings.current.palmRejection
   );
   const [compactToolbar, setCompactToolbar] = useState(false);
+  const [selectedLatexObjectId, setSelectedLatexObjectId] = useState<string | null>(null);
   const temporaryTool = useRef<DrawingTool | null>(null);
 
   useEffect(() => {
@@ -231,7 +243,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
     const x = Math.max(0, Math.floor(rect.x));
     const y = Math.max(0, Math.floor(rect.y));
     const right = Math.min(CANVAS_WIDTH, Math.ceil(rect.x + rect.width));
-    const bottom = Math.min(CANVAS_HEIGHT, Math.ceil(rect.y + rect.height));
+    const bottom = Math.min(canvasHeight, Math.ceil(rect.y + rect.height));
 
     if (backgroundDataUrl) {
       ctx.clearRect(x, y, right - x, bottom - y);
@@ -312,12 +324,12 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
+    canvas.height = canvasHeight;
     loadImage(dataUrl);
     setHistory([]);
     setFuture([]);
     setSelection(null);
-  }, [dataUrl, backgroundDataUrl, paper]);
+  }, [dataUrl, backgroundDataUrl, paper, canvasHeight]);
 
   const eventPoint = (event: React.PointerEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current!;
@@ -815,7 +827,23 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
     extractedContext.fillStyle = "#ffffff";
     extractedContext.fillRect(0, 0, sw, sh);
     extractedContext.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
-    onExtractSelection(extracted.toDataURL("image/png"));
+    onExtractSelection(extracted.toDataURL("image/png"), { x: sx, y: sy, width: sw, height: sh });
+  };
+
+  const extendCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !onCanvasHeightChange || canvasHeight >= MAX_CANVAS_HEIGHT) return;
+    onSaveRef.current(canvas.toDataURL("image/png"));
+    onCanvasHeightChange(Math.min(MAX_CANVAS_HEIGHT, canvasHeight + 1200));
+  };
+
+  const updateLatexObject = (id: string, changes: Partial<CanvasLatexObjectType>) => {
+    onLatexObjectsChange?.(latexObjects.map(object => object.id === id ? { ...object, ...changes } : object));
+  };
+
+  const deleteLatexObject = (id: string) => {
+    onLatexObjectsChange?.(latexObjects.filter(object => object.id !== id));
+    setSelectedLatexObjectId(null);
   };
 
   const save = () => {
@@ -911,8 +939,13 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
         Page longue activée. Sur tablette : pince à deux doigts pour zoomer et utilise deux doigts pour te déplacer. L’outil Sélection permet de déplacer, copier, couper ou supprimer une zone.
       </p>
 
-      <div className="canvas-wrap canvas-wrap-long" ref={wrapRef} onWheel={handleWheel}>
-        <div className={`canvas-stage ${backgroundDataUrl ? "pdf-canvas-stage" : ""}`} style={{ width: `${CANVAS_WIDTH * zoom}px`, height: `${CANVAS_HEIGHT * zoom}px` }}>
+      <div className="infinite-canvas-status">
+        <span>Espace de travail : {Math.round(canvasHeight / 1200)} sections</span>
+        <button onClick={extendCanvas} disabled={canvasHeight >= MAX_CANVAS_HEIGHT}>+ Agrandir la page</button>
+      </div>
+
+      <div className="canvas-wrap canvas-wrap-long" ref={wrapRef} onWheel={handleWheel} onPointerDown={() => setSelectedLatexObjectId(null)}>
+        <div className={`canvas-stage ${backgroundDataUrl ? "pdf-canvas-stage" : ""}`} style={{ width: `${CANVAS_WIDTH * zoom}px`, height: `${canvasHeight * zoom}px` }}>
           {backgroundDataUrl && (
             <img
               className="pdf-page-background"
@@ -925,7 +958,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
             ref={canvasRef}
             style={{
               width: `${CANVAS_WIDTH * zoom}px`,
-              height: `${CANVAS_HEIGHT * zoom}px`,
+              height: `${canvasHeight * zoom}px`,
               cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair"
             }}
             onPointerDown={pointerDown}
@@ -933,6 +966,19 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave,
             onPointerUp={pointerUp}
             onPointerCancel={pointerUp}
           />
+
+          {latexObjects.map(object => (
+            <CanvasLatexObject
+              key={object.id}
+              object={object}
+              zoom={zoom}
+              selected={selectedLatexObjectId === object.id}
+              onSelect={() => setSelectedLatexObjectId(object.id)}
+              onChange={changes => updateLatexObject(object.id, changes)}
+              onEdit={() => onEditLatexObject?.(object)}
+              onDelete={() => deleteLatexObject(object.id)}
+            />
+          ))}
           {displayedSelection && (
             <div
               className="canvas-selection-box"
