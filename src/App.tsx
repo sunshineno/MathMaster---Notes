@@ -29,6 +29,7 @@ import AppTopBar from "./components/AppTopBar";
 import ExplorerSidebar from "./components/ExplorerSidebar";
 import PageNavigator from "./components/PageNavigator";
 import SnapshotDialog from "./components/SnapshotDialog";
+import LatexSelectionDialog from "./components/LatexSelectionDialog";
 import {
   clearRecoverySnapshot,
   downloadBackup,
@@ -71,6 +72,7 @@ export default function App() {
   const [pdfImportProgress, setPdfImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
+  const [latexSelectionImage, setLatexSelectionImage] = useState<string | null>(null);
   const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>("initializing");
   const [cloudError, setCloudError] = useState("");
   const [cloudUpdatedAt, setCloudUpdatedAt] = useState<string | null>(null);
@@ -1087,6 +1089,7 @@ export default function App() {
                 backgroundDataUrl={page.backgroundDataUrl}
                 paper={page.paper}
                 onSave={dataUrl => updatePage({ dataUrl })}
+                onExtractSelection={imageDataUrl => setLatexSelectionImage(imageDataUrl)}
               />
 
               <MathBlocksEditor
@@ -1118,6 +1121,19 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {latexSelectionImage && page && (
+        <LatexSelectionDialog
+          imageDataUrl={latexSelectionImage}
+          onClose={() => setLatexSelectionImage(null)}
+          onInsert={latex => {
+            const currentLatex = page.latex.trim();
+            const addition = `\\[${latex}\\]`;
+            updatePage({ latex: currentLatex ? `${currentLatex}\n\n${addition}` : addition });
+            setLatexSelectionImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ interface Props {
   backgroundDataUrl?: string;
   paper: PaperType;
   onSave: (dataUrl: string) => void;
+  onExtractSelection?: (imageDataUrl: string) => void;
 }
 
 interface Point {
@@ -52,7 +53,7 @@ function loadDrawingSettings(): DrawingSettings {
   }
 }
 
-export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave }: Props) {
+export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave, onExtractSelection }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const drawing = useRef(false);
@@ -796,6 +797,27 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave 
     scheduleAutosave();
   };
 
+
+  const convertSelectionToLatex = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !selection || !onExtractSelection) return;
+
+    const sx = Math.max(0, Math.round(selection.x));
+    const sy = Math.max(0, Math.round(selection.y));
+    const sw = Math.min(canvas.width - sx, Math.max(1, Math.round(selection.width)));
+    const sh = Math.min(canvas.height - sy, Math.max(1, Math.round(selection.height)));
+    const extracted = document.createElement("canvas");
+    extracted.width = sw;
+    extracted.height = sh;
+    const extractedContext = extracted.getContext("2d");
+    if (!extractedContext) return;
+
+    extractedContext.fillStyle = "#ffffff";
+    extractedContext.fillRect(0, 0, sw, sh);
+    extractedContext.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+    onExtractSelection(extracted.toDataURL("image/png"));
+  };
+
   const save = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -877,6 +899,7 @@ export default function CanvasBoard({ dataUrl, backgroundDataUrl, paper, onSave 
         onCutSelection={cutSelection}
         onPasteSelection={pasteSelection}
         onDeleteSelection={deleteSelection}
+        onConvertSelectionToLatex={convertSelectionToLatex}
         onUndo={undo}
         onRedo={redo}
         onClear={clear}

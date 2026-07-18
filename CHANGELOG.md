@@ -1,5 +1,16 @@
 # Historique des versions
 
+## v2.1.0 — Sélection manuscrite et éditeur LaTeX
+
+- bouton LaTeX disponible lorsqu’une zone du canvas est sélectionnée ;
+- extraction de la zone manuscrite sous forme d’image ;
+- fenêtre d’édition avec image source et saisie LaTeX ;
+- aperçu mathématique en temps réel via MathJax ;
+- copie du code LaTeX dans le presse-papiers ;
+- insertion de la formule dans le mode LaTeX libre de la page ;
+- écriture manuscrite originale conservée ;
+- architecture prête pour un futur moteur de reconnaissance automatique.
+
 ## v2.0.0 — Synchronisation cloud sécurisée
 
 - sauvegarde automatique du cahier dans Supabase ;

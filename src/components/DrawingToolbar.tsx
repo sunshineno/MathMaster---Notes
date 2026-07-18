@@ -9,6 +9,7 @@ import {
   Highlighter,
   Minus,
   MousePointer2,
+  Sigma,
   PenLine,
   Plus,
   RectangleHorizontal,
@@ -50,6 +51,7 @@ interface DrawingToolbarProps {
   onCutSelection: () => void;
   onPasteSelection: () => void;
   onDeleteSelection: () => void;
+  onConvertSelectionToLatex: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -80,6 +82,7 @@ export default function DrawingToolbar({
   onCutSelection,
   onPasteSelection,
   onDeleteSelection,
+  onConvertSelectionToLatex,
   onUndo,
   onRedo,
   onClear,
@@ -199,6 +202,7 @@ export default function DrawingToolbar({
             <button onClick={onCopySelection} title="Copier la sélection"><Copy size={17} /></button>
             <button onClick={onCutSelection} title="Couper la sélection"><Scissors size={17} /></button>
             <button onClick={onPasteSelection} title="Coller"><Clipboard size={17} /></button>
+            <button onClick={onConvertSelectionToLatex} title="Ouvrir la sélection dans l’éditeur LaTeX"><Sigma size={17} /> LaTeX</button>
             <button onClick={onDeleteSelection} title="Supprimer la sélection"><Trash2 size={17} /></button>
           </div>
         )}

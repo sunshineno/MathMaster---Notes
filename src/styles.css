@@ -1815,3 +1815,200 @@ canvas {
     display: none;
   }
 }
+
+/* v2.1.0 — sélection manuscrite et éditeur LaTeX */
+.latex-selection-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, .72);
+  backdrop-filter: blur(4px);
+}
+
+.latex-selection-dialog {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 25px 80px rgba(15, 23, 42, .38);
+}
+
+.latex-selection-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.latex-selection-dialog h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 21px;
+}
+
+.latex-selection-dialog header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.latex-selection-dialog header > button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px;
+  background: transparent;
+  color: #475569;
+}
+
+.latex-selection-dialog header > button:hover {
+  background: #e2e8f0;
+}
+
+.latex-selection-content {
+  display: grid;
+  grid-template-columns: minmax(280px, .9fr) minmax(340px, 1.1fr);
+  gap: 20px;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  padding: 20px;
+}
+
+.latex-selection-content h3,
+.latex-editor-panel label {
+  display: block;
+  margin: 0 0 9px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.latex-selection-image-wrap {
+  display: grid;
+  min-height: 210px;
+  place-items: center;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.latex-selection-image-wrap img {
+  max-width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.latex-ocr-note {
+  margin: 11px 0 0;
+  border-left: 3px solid #60a5fa;
+  padding: 8px 10px;
+  background: #eff6ff;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.latex-editor-panel textarea {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: 1px solid #94a3b8;
+  border-radius: 10px;
+  padding: 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.latex-live-preview {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 18px;
+  text-align: center;
+}
+
+.latex-selection-dialog > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.latex-selection-dialog footer > div {
+  display: flex;
+  gap: 9px;
+}
+
+.latex-primary-button,
+.latex-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-weight: 750;
+}
+
+.latex-primary-button {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #fff;
+}
+
+.latex-secondary-button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.latex-primary-button:disabled,
+.latex-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+@media (max-width: 760px) {
+  .latex-selection-backdrop { padding: 8px; }
+  .latex-selection-content {
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 205px);
+    padding: 14px;
+  }
+  .latex-selection-dialog > footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .latex-selection-dialog footer > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
